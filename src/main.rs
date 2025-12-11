@@ -62,7 +62,7 @@ impl App {
             ])
             .split(frame.area());
 
-        let text = "Hello, Ratatui!";
+        let text = "=^,^=";
 
         frame.render_widget(Paragraph::new(text).left_aligned().cyan(), layout[0]);
 
