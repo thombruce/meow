@@ -1,3 +1,14 @@
+// NOTE: On how to think about the structure of a ratatui application...
+// We have got:
+// 1. State (see pub struct App and initial run setup)
+// 2. Controller/mutations (see the while loop which also calls the draw function)
+// 3. Renderer (see fn render)
+// When we think about separating this out into modules... a naive approach might be to
+// take a sort of single file component approach, with each component defining its own
+// needs and therefore having many separate loops. Better would be to handle state more
+// effectively (think like Pinia in Nuxt). Ratatui in fact has a suggested means for
+// appropriately handling state that I should look at.
+
 use chrono::Local;
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
 use ratatui::{
@@ -7,7 +18,7 @@ use ratatui::{
     style::{Color, Stylize},
     widgets::Paragraph,
 };
-use std::time::Duration;
+use std::{io, time::Duration};
 
 fn main() -> color_eyre::Result<()> {
     color_eyre::install()?;
@@ -23,6 +34,7 @@ pub struct App {
     /// Is the application running?
     running: bool,
     time: String,
+    bat_percent: String,
 }
 
 impl App {
@@ -34,10 +46,30 @@ impl App {
     /// Run the application's main loop.
     pub fn run(mut self, mut terminal: DefaultTerminal) -> color_eyre::Result<()> {
         self.running = true;
+
+        // TODO: Move me! Ideally each widget should be moved into its own file and assembled here.
+        // TODO: Document me! We need better comments to describe what's going on. This doesn't get
+        // the battery state at all, for instance, it just gets the first found instance of a
+        // battery.
+        let manager = battery::Manager::new()?;
+        let mut battery = match manager.batteries()?.next() {
+            Some(Ok(battery)) => battery,
+            Some(Err(e)) => {
+                eprintln!("Unable to access battery information");
+                return Err(e.into());
+            }
+            None => {
+                eprintln!("Unable to find any batteries");
+                return Err(io::Error::from(io::ErrorKind::NotFound).into());
+            }
+        };
+
         while self.running {
             self.time = Local::now().format("%Y-%m-%d %H:%M:%S").to_string();
+            self.bat_percent = ((battery.state_of_charge().value * 100.0) as i32).to_string();
             terminal.draw(|frame| self.render(frame))?;
             self.handle_crossterm_events()?;
+            manager.refresh(&mut battery)?;
         }
         Ok(())
     }
@@ -61,7 +93,9 @@ impl App {
         let text = "=^,^=";
 
         frame.render_widget(
-            Paragraph::new(text).left_aligned().fg(Color::White),
+            Paragraph::new("󰁹 ".to_owned() + &self.bat_percent + "%")
+                .left_aligned()
+                .fg(Color::White),
             layout[0],
         );
 
@@ -70,6 +104,7 @@ impl App {
         frame.render_widget(
             Paragraph::new(self.time.clone())
                 .right_aligned()
+                // .fg(Color::Rgb(189, 43, 174)),
                 .fg(Color::White),
             layout[2],
         );
