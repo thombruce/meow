@@ -1,6 +1,8 @@
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
 use ratatui::{
     DefaultTerminal, Frame,
+    layout::{Direction, Layout},
+    prelude::Constraint,
     style::Stylize,
     text::Line,
     widgets::{Block, Paragraph},
@@ -44,19 +46,51 @@ impl App {
     /// - <https://docs.rs/ratatui/latest/ratatui/widgets/index.html>
     /// - <https://github.com/ratatui/ratatui/tree/main/ratatui-widgets/examples>
     fn render(&mut self, frame: &mut Frame) {
+        let layout = Layout::default()
+            .direction(Direction::Horizontal)
+            .constraints(vec![
+                Constraint::Ratio(1, 3),
+                Constraint::Ratio(1, 3),
+                Constraint::Ratio(1, 3),
+            ])
+            .split(frame.area());
+
         let title = Line::from("Ratatui Simple Template")
             .bold()
             .blue()
             .centered();
+
         let text = "Hello, Ratatui!\n\n\
             Created using https://github.com/ratatui/templates\n\
             Press `Esc`, `Ctrl-C` or `q` to stop running.";
+
         frame.render_widget(
             Paragraph::new(text)
-                .block(Block::bordered().title(title))
-                .centered(),
-            frame.area(),
-        )
+                .block(Block::bordered().border_type(ratatui::widgets::BorderType::Rounded))
+                .left_aligned()
+                .cyan(),
+            layout[0],
+        );
+
+        frame.render_widget(
+            Paragraph::new(text)
+                .block(
+                    Block::bordered()
+                        .border_type(ratatui::widgets::BorderType::Rounded)
+                        .title(title),
+                )
+                .centered()
+                .red(),
+            layout[1],
+        );
+
+        frame.render_widget(
+            Paragraph::new(text)
+                .block(Block::bordered().border_type(ratatui::widgets::BorderType::Rounded))
+                .right_aligned()
+                .green(),
+            layout[2],
+        );
     }
 
     /// Reads the crossterm events and updates the state of [`App`].
