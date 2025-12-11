@@ -1,15 +1,11 @@
 use chrono::Local;
-use crossterm::{
-    event::{self, Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers},
-    terminal::enable_raw_mode,
-};
+use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
 use ratatui::{
     DefaultTerminal, Frame,
     layout::{Direction, Layout},
     prelude::Constraint,
     style::Stylize,
-    text::Line,
-    widgets::{Block, Paragraph},
+    widgets::Paragraph,
 };
 use std::time::Duration;
 
