@@ -93,16 +93,14 @@ impl App {
         let text = "=^,^=";
 
         frame.render_widget(
-            Paragraph::new("󰁹 ".to_owned() + &self.bat_percent + "%")
-                .left_aligned()
-                .fg(Color::White),
+            Paragraph::new(text).left_aligned().fg(Color::White),
             layout[0],
         );
 
         frame.render_widget(Paragraph::new(text).centered().fg(Color::White), layout[1]);
 
         frame.render_widget(
-            Paragraph::new(self.time.clone())
+            Paragraph::new("󰁹 ".to_owned() + &self.bat_percent + "%" + " | " + &self.time)
                 .right_aligned()
                 // .fg(Color::Rgb(189, 43, 174)),
                 .fg(Color::White),
