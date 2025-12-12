@@ -18,7 +18,7 @@ use ratatui::{
     style::{Color, Stylize},
     widgets::Paragraph,
 };
-use std::{io, time::Duration};
+use std::{io, process::Command, time::Duration};
 
 fn main() -> color_eyre::Result<()> {
     color_eyre::install()?;
@@ -34,6 +34,7 @@ pub struct App {
     /// Is the application running?
     running: bool,
     time: String,
+    volume: String,
     bat_percent: String,
 }
 
@@ -65,7 +66,17 @@ impl App {
         };
 
         while self.running {
+            // TODO: Time updates appear inconsistently timed. The half-second timer can result in
+            // the string value being updated twice inside of the same half-second. This has the
+            // effect of making an actual second look... wrong.
             self.time = Local::now().format("%Y-%m-%d %H:%M:%S").to_string();
+
+            // TODO: Below appears slow as it is run on the 500 millisecond timer
+            // but the volume is updated with a keypress. It might also be updated via
+            // graphical UI or by scripts. It should be updated accordingly whenever its value is
+            // changed. So then what event do we listen out for?
+            self.volume = get_system_volume().unwrap().to_string();
+
             self.bat_percent = ((battery.state_of_charge().value * 100.0) as i32).to_string();
             terminal.draw(|frame| self.render(frame))?;
             self.handle_crossterm_events()?;
@@ -100,10 +111,19 @@ impl App {
         frame.render_widget(Paragraph::new(text).centered().fg(Color::White), layout[1]);
 
         frame.render_widget(
-            Paragraph::new("󰁹 ".to_owned() + &self.bat_percent + "%" + " | " + &self.time)
-                .right_aligned()
-                // .fg(Color::Rgb(189, 43, 174)),
-                .fg(Color::White),
+            Paragraph::new(
+                "󰕾 ".to_owned()
+                    + &self.volume
+                    + "% | "
+                    + "󰁹 "
+                    + &self.bat_percent
+                    + "%"
+                    + " | "
+                    + &self.time,
+            )
+            .right_aligned()
+            // .fg(Color::Rgb(189, 43, 174)),
+            .fg(Color::White),
             layout[2],
         );
     }
@@ -139,4 +159,31 @@ impl App {
     fn quit(&mut self) {
         self.running = false;
     }
+}
+
+fn get_system_volume() -> Option<i32> {
+    let output = Command::new("wpctl")
+        .args(["get-volume", "@DEFAULT_AUDIO_SINK@"])
+        .output()
+        .expect("failed to get volume");
+
+    if output.status.success() {
+        let stdout = str::from_utf8(&output.stdout).unwrap();
+        let parts: Vec<&str> = stdout.trim().split_whitespace().collect();
+
+        if let Some(volume_str) = parts.last() {
+            if let Ok(volume) = volume_str.parse::<f32>() {
+                return Some((volume * 100.0) as i32); // as percentage
+            }
+        }
+
+        eprintln!("Failed to parse volume from output: {}", stdout);
+    } else {
+        eprintln!(
+            "Error: {}",
+            str::from_utf8(&output.stderr).unwrap_or("unknown error")
+        );
+    }
+
+    None
 }
