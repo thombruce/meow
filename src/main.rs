@@ -75,6 +75,9 @@ impl App {
             // but the volume is updated with a keypress. It might also be updated via
             // graphical UI or by scripts. It should be updated accordingly whenever its value is
             // changed. So then what event do we listen out for?
+            // BEST solution would be to listen out for volume change events, however crossterm
+            // does not appear to have this capability..? Presumably the sound control systems we
+            // have installed do output some kind of information we could listen to somewhere?
             self.volume = get_system_volume().unwrap().to_string();
 
             self.bat_percent = ((battery.state_of_charge().value * 100.0) as i32).to_string();
@@ -134,6 +137,11 @@ impl App {
     /// [`event::poll`] function to check if there are any events available with a timeout.
     fn handle_crossterm_events(&mut self) -> color_eyre::Result<()> {
         if event::poll(Duration::from_millis(500))? {
+            // TODO: In fact, the bar widget won't be able to receive keypress events at all...
+            // correct? Since it won't have focused state? Perhaps it can respond to keypresses
+            // without focus but... I don't *think* we want that. I think we want the widgets to
+            // update on tick (clock) or in response to other state changes (volume, battery, VPN,
+            // etc.)
             match event::read()? {
                 // it's important to check KeyEventKind::Press to avoid handling key release events
                 Event::Key(key) if key.kind == KeyEventKind::Press => self.on_key_event(key),
