@@ -145,23 +145,30 @@ impl App {
             ])
             .split(frame.area());
 
-        let text = "=^,^=";
-
-        // TODO: Workspaces (NOTE: Focused state is obtained from `hyprctl activeworkspace`, which
-        // we should be able to match to one of the listed `hyprctl workspaces` displayed)
-
-        frame.render_widget(
-            Paragraph::new(text).left_aligned().fg(Color::White),
-            layout[0],
-        );
-
-        frame.render_widget(Paragraph::new(text).centered().fg(Color::White), layout[1]);
-
         let sep_span = Span::raw(" | ");
         let space_span = Span::raw(" ");
         // TODO: Consider actual usefulness of space_span. We can just write space after icons
         // below. Perhaps it is useful though as a separator for dividing components from one
         // another.
+
+        let text_span = Span::raw("=^,^=");
+
+        // TODO: Workspaces (NOTE: Focused state is obtained from `hyprctl activeworkspace`, which
+        // we should be able to match to one of the listed `hyprctl workspaces` displayed)
+
+        frame.render_widget(
+            Line::from(vec![space_span.clone(), text_span])
+                .left_aligned()
+                .fg(Color::White),
+            layout[0],
+        );
+
+        let time_span = Span::raw(&self.time);
+
+        frame.render_widget(
+            Paragraph::new(time_span).centered().fg(Color::White),
+            layout[1],
+        );
 
         // TODO: Temp
         // TODO: WiFi
@@ -186,8 +193,6 @@ impl App {
         let bat_icon = Span::raw("󰁹 ".to_owned()); // .green();
         let bat_span = Span::raw(self.bat_percent.clone() + "%"); // .green();
 
-        let time_span = Span::raw(&self.time);
-
         let widget_line = Line::from(vec![
             cpu_icon,
             cpu_span,
@@ -203,8 +208,7 @@ impl App {
             sep_span.clone(),
             bat_icon,
             bat_span,
-            sep_span.clone(),
-            time_span,
+            space_span.clone(),
         ]);
 
         frame.render_widget(
@@ -221,7 +225,7 @@ impl App {
     /// If your application needs to perform work in between handling events, you can use the
     /// [`event::poll`] function to check if there are any events available with a timeout.
     fn handle_crossterm_events(&mut self) -> color_eyre::Result<()> {
-        if event::poll(Duration::from_millis(500))? {
+        if event::poll(Duration::from_millis(333))? {
             // TODO: In fact, the bar widget won't be able to receive keypress events at all...
             // correct? Since it won't have focused state? Perhaps it can respond to keypresses
             // without focus but... I don't *think* we want that. I think we want the widgets to
