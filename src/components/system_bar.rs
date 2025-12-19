@@ -1,0 +1,163 @@
+use ratatui::{
+    Frame,
+    prelude::Stylize,
+    style::Color,
+    text::{Line, Span},
+    widgets::Paragraph,
+};
+use regex::Regex;
+use std::process::Command;
+use sysinfo::{CpuRefreshKind, MemoryRefreshKind, RefreshKind, System};
+
+static BRIGHTNESS_REGEX: std::sync::LazyLock<Regex> =
+    std::sync::LazyLock::new(|| Regex::new(r"\d+%").unwrap());
+
+#[derive(Debug)]
+pub struct SystemBar {
+    cpu_usage: String,
+    ram_usage: String,
+    brightness: String,
+    volume: String,
+    battery_percentage: String,
+    system: System,
+    battery_manager: battery::Manager,
+    battery: battery::Battery,
+}
+
+impl SystemBar {
+    pub fn new() -> color_eyre::Result<Self> {
+        let system = System::new_with_specifics(
+            RefreshKind::nothing()
+                .with_cpu(CpuRefreshKind::everything())
+                .with_memory(MemoryRefreshKind::everything()),
+        );
+
+        let manager = battery::Manager::new()?;
+        let battery = match manager.batteries()?.next() {
+            Some(Ok(battery)) => battery,
+            Some(Err(e)) => {
+                eprintln!("Unable to access battery information");
+                return Err(e.into());
+            }
+            None => {
+                eprintln!("Unable to find any batteries");
+                return Err(std::io::Error::from(std::io::ErrorKind::NotFound).into());
+            }
+        };
+
+        Ok(Self {
+            cpu_usage: "0".to_string(),
+            ram_usage: "0".to_string(),
+            brightness: get_system_brightness().unwrap_or_default(),
+            volume: get_system_volume().unwrap_or(0).to_string(),
+            battery_percentage: ((battery.state_of_charge().value * 100.0) as i32).to_string(),
+            system,
+            battery_manager: manager,
+            battery,
+        })
+    }
+
+    pub fn update(&mut self) -> color_eyre::Result<()> {
+        // Update CPU
+        self.system.refresh_cpu_all();
+        let iter = self.system.cpus().iter();
+        let count = iter.len() as f32;
+        let sum = iter.fold(0.0, |acc, x| acc + x.cpu_usage());
+        let avg: u32 = (sum / count) as u32;
+        self.cpu_usage = avg.to_string();
+
+        // Update RAM
+        self.system.refresh_memory();
+        let mem_percent: u32 =
+            (self.system.used_memory() as f64 / self.system.total_memory() as f64 * 100.0) as u32;
+        self.ram_usage = mem_percent.to_string();
+
+        // Update brightness and volume
+        self.brightness = get_system_brightness().unwrap_or_default();
+        self.volume = get_system_volume().unwrap_or(0).to_string();
+
+        // Update battery
+        self.battery_manager.refresh(&mut self.battery)?;
+        self.battery_percentage =
+            ((self.battery.state_of_charge().value * 100.0) as i32).to_string();
+
+        Ok(())
+    }
+
+    pub fn render(&self, frame: &mut Frame, area: ratatui::layout::Rect) {
+        let spans = vec![
+            Span::raw("󰻠 "),
+            Span::raw(self.cpu_usage.clone() + "%"),
+            Span::raw(" "),
+            Span::raw("󰍛 "),
+            Span::raw(self.ram_usage.clone() + "%"),
+            Span::raw(" | "),
+            Span::raw("󰃠 "),
+            Span::raw(self.brightness.clone()),
+            Span::raw(" "),
+            Span::raw("󰕾 "),
+            Span::raw(self.volume.clone() + "%"),
+            Span::raw(" | "),
+            Span::raw("󰁹 "),
+            Span::raw(self.battery_percentage.clone() + "%"),
+        ];
+
+        let system_line = Line::from(spans);
+
+        frame.render_widget(
+            Paragraph::new(system_line).right_aligned().fg(Color::White),
+            area,
+        );
+    }
+}
+
+fn get_system_volume() -> Option<i32> {
+    let output = Command::new("wpctl")
+        .args(["get-volume", "@DEFAULT_AUDIO_SINK@"])
+        .output()
+        .expect("failed to get volume");
+
+    if output.status.success() {
+        let stdout = str::from_utf8(&output.stdout).unwrap();
+        let parts: Vec<&str> = stdout.trim().split_whitespace().collect();
+
+        if let Ok(volume) = parts[1].parse::<f32>() {
+            return Some((volume * 100.0) as i32);
+        }
+
+        eprintln!("Failed to parse volume from output: {}", stdout);
+    } else {
+        eprintln!(
+            "Error: {}",
+            str::from_utf8(&output.stderr).unwrap_or("unknown error")
+        );
+    }
+
+    Some(0)
+}
+
+fn get_system_brightness() -> Option<String> {
+    let output = Command::new("brightnessctl")
+        .output()
+        .expect("failed to get brightness");
+
+    if output.status.success() {
+        let brightness_str = str::from_utf8(&output.stdout).unwrap();
+
+        let re = &BRIGHTNESS_REGEX;
+
+        if let Some(brightness) = re.find(brightness_str).map(|m| m.as_str()) {
+            return Some(brightness.to_string());
+        }
+
+        eprintln!("Failed to parse brightness from output: {}", brightness_str);
+    } else {
+        eprintln!(
+            "Error: {}",
+            str::from_utf8(&output.stderr).unwrap_or("unknown error")
+        );
+    }
+
+    None
+}
+

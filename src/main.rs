@@ -7,7 +7,7 @@ use ratatui::{
 use std::time::Duration;
 
 mod components;
-use components::{StatusBar, SystemInfo, Time, Workspaces};
+use components::{SystemBar, Time, Workspaces};
 
 fn main() -> color_eyre::Result<()> {
     color_eyre::install()?;
@@ -24,8 +24,7 @@ pub struct App {
     running: bool,
     time: Time,
     workspaces: Workspaces,
-    system_info: SystemInfo,
-    status_bar: StatusBar,
+    system_bar: SystemBar,
 }
 
 impl App {
@@ -35,8 +34,7 @@ impl App {
             running: true,
             time: Time::new(),
             workspaces: Workspaces::new(),
-            system_info: SystemInfo::new(),
-            status_bar: StatusBar::new()?,
+            system_bar: SystemBar::new()?,
         })
     }
 
@@ -53,9 +51,8 @@ impl App {
     fn update_components(&mut self) {
         self.time.update();
         self.workspaces.update();
-        self.system_info.update();
-        if let Err(e) = self.status_bar.update() {
-            eprintln!("Error updating status bar: {}", e);
+        if let Err(e) = self.system_bar.update() {
+            eprintln!("Error updating system bar: {}", e);
         }
     }
 
@@ -72,15 +69,7 @@ impl App {
 
         self.workspaces.render(frame, layout[0]);
         self.time.render(frame, layout[1]);
-
-        // Combine system info and status bar in the right third
-        let right_layout = Layout::default()
-            .direction(Direction::Horizontal)
-            .constraints(vec![Constraint::Fill(1), Constraint::Fill(1)])
-            .split(layout[2]);
-
-        self.status_bar.render(frame, right_layout[1]);
-        self.system_info.render(frame, right_layout[0]);
+        self.system_bar.render(frame, layout[2]);
     }
 
     /// Reads the crossterm events and updates the state of [`App`].
