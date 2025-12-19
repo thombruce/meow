@@ -7,19 +7,21 @@ use ratatui::{
 };
 use regex::Regex;
 use std::process::Command;
-use sysinfo::{CpuRefreshKind, MemoryRefreshKind, RefreshKind, System};
+use sysinfo::{Components, CpuRefreshKind, MemoryRefreshKind, RefreshKind, System};
 
 static BRIGHTNESS_REGEX: std::sync::LazyLock<Regex> =
     std::sync::LazyLock::new(|| Regex::new(r"\d+%").unwrap());
 
 #[derive(Debug)]
 pub struct SystemBar {
+    temperature: String,
     cpu_usage: String,
     ram_usage: String,
     brightness: String,
     volume: String,
     battery_percentage: String,
     system: System,
+    components: Components,
     battery_manager: battery::Manager,
     battery: battery::Battery,
 }
@@ -31,6 +33,7 @@ impl SystemBar {
                 .with_cpu(CpuRefreshKind::everything())
                 .with_memory(MemoryRefreshKind::everything()),
         );
+        let components = Components::new();
 
         let manager = battery::Manager::new()?;
         let battery = match manager.batteries()?.next() {
@@ -46,20 +49,35 @@ impl SystemBar {
         };
 
         Ok(Self {
+            temperature: "0".to_string(),
             cpu_usage: "0".to_string(),
             ram_usage: "0".to_string(),
             brightness: get_system_brightness().unwrap_or_default(),
             volume: get_system_volume().unwrap_or(0).to_string(),
             battery_percentage: ((battery.state_of_charge().value * 100.0) as i32).to_string(),
             system,
+            components,
             battery_manager: manager,
             battery,
         })
     }
 
     pub fn update(&mut self) -> color_eyre::Result<()> {
-        // Update CPU
+        // Update CPU and temperature
         self.system.refresh_cpu_all();
+        self.components.refresh(true);
+
+        // Update temperature
+        if let Some(component) = self.components.iter().find(|c| {
+            c.label().to_lowercase().contains("cpu")
+                || c.label().to_lowercase().contains("core")
+                || c.label().to_lowercase().contains("package")
+        }) {
+            if let Some(temp) = component.temperature() {
+                self.temperature = format!("{:.0}", temp);
+            }
+        }
+
         let iter = self.system.cpus().iter();
         let count = iter.len() as f32;
         let sum = iter.fold(0.0, |acc, x| acc + x.cpu_usage());
@@ -86,6 +104,9 @@ impl SystemBar {
 
     pub fn render(&self, frame: &mut Frame, area: ratatui::layout::Rect) {
         let spans = vec![
+            Span::raw(" "),
+            Span::raw(self.temperature.clone() + "°C"),
+            Span::raw(" "),
             Span::raw("󰻠 "),
             Span::raw(self.cpu_usage.clone() + "%"),
             Span::raw(" "),
@@ -160,4 +181,3 @@ fn get_system_brightness() -> Option<String> {
 
     None
 }
-
