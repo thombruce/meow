@@ -24,6 +24,9 @@ use serde::Deserialize;
 use std::{io, process::Command, time::Duration};
 use sysinfo::{CpuRefreshKind, RefreshKind, System};
 
+static INTEGER_PERCENTAGE_REGEX: std::sync::LazyLock<Regex> =
+    std::sync::LazyLock::new(|| Regex::new(r"\d+%").unwrap());
+
 fn main() -> color_eyre::Result<()> {
     color_eyre::install()?;
     let terminal = ratatui::init();
@@ -342,7 +345,7 @@ fn get_system_volume() -> Option<i32> {
         );
     }
 
-    // TODO: Consider reverting to None here; or think about what ought to be returned and how that
+    // NOTE: Consider reverting to None here; or think about what ought to be returned and how that
     // should be handled elsewhere. Presently, the application fails if no value is returned.
     Some(0)
 }
@@ -355,9 +358,8 @@ fn get_system_brightness() -> Option<String> {
     if output.status.success() {
         let brightness_str = str::from_utf8(&output.stdout).unwrap();
 
-        // TODO: This should be a constant rather than recreated here on
-        // every loop.
-        let re = Regex::new(r"\d+%").unwrap();
+        // Use the pre-compiled regex constant
+        let re = &INTEGER_PERCENTAGE_REGEX;
 
         if let Some(brightness) = re.find(brightness_str).map(|m| m.as_str()) {
             return Some(brightness.to_string()); // as percentage
