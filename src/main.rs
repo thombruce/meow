@@ -327,10 +327,11 @@ fn get_system_volume() -> Option<i32> {
         let stdout = str::from_utf8(&output.stdout).unwrap();
         let parts: Vec<&str> = stdout.trim().split_whitespace().collect();
 
-        if let Some(volume_str) = parts.last() {
-            if let Ok(volume) = volume_str.parse::<f32>() {
-                return Some((volume * 100.0) as i32); // as percentage
-            }
+        // TODO: We want to match the `[MUTED]` part of the string here as well as the float part
+
+        // Parse the volume float from parts[1]
+        if let Ok(volume) = parts[1].parse::<f32>() {
+            return Some((volume * 100.0) as i32); // as percentage
         }
 
         eprintln!("Failed to parse volume from output: {}", stdout);
@@ -341,7 +342,9 @@ fn get_system_volume() -> Option<i32> {
         );
     }
 
-    None
+    // TODO: Consider reverting to None here; or think about what ought to be returned and how that
+    // should be handled elsewhere. Presently, the application fails if no value is returned.
+    Some(0)
 }
 
 fn get_system_brightness() -> Option<String> {
