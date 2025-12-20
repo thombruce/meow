@@ -1,10 +1,3 @@
-use ratatui::{
-    Frame,
-    prelude::Stylize,
-    style::Color,
-    text::{Line, Span},
-    widgets::Paragraph,
-};
 use std::process::Command;
 
 #[derive(Debug)]
@@ -21,20 +14,6 @@ impl Volume {
 
     pub fn update(&mut self) {
         self.level = get_system_volume().unwrap_or(0).to_string();
-    }
-
-    pub fn render(&self, frame: &mut Frame, area: ratatui::layout::Rect) {
-        let vol_icon = Span::raw("󰕾 ".to_owned());
-        let vol_span = Span::raw(self.level.clone() + "%");
-
-        let volume_line = Line::from(vec![vol_icon, vol_span]);
-
-        frame.render_widget(
-            Paragraph::new(volume_line)
-                .right_aligned()
-                .fg(Color::White),
-            area,
-        );
     }
 }
 

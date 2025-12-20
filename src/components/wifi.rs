@@ -1,10 +1,3 @@
-use ratatui::{
-    Frame,
-    prelude::Stylize,
-    style::Color,
-    text::{Line, Span},
-    widgets::Paragraph,
-};
 use std::process::Command;
 
 #[derive(Debug)]
@@ -26,30 +19,6 @@ impl Wifi {
             self.status = status;
             self.network = network;
         }
-    }
-
-    pub fn render(&self, frame: &mut Frame, area: ratatui::layout::Rect) {
-        let wifi_icon = if self.status == "connected" {
-            "󰤨 "
-        } else {
-            "󰤮 "
-        };
-
-        let wifi_text = if self.status == "connected" && !self.network.is_empty() {
-            &self.network
-        } else {
-            "Off"
-        };
-
-        let wifi_span = Span::raw(wifi_icon.to_owned());
-        let network_span = Span::raw(wifi_text.to_string());
-
-        let wifi_line = Line::from(vec![wifi_span, network_span]);
-
-        frame.render_widget(
-            Paragraph::new(wifi_line).right_aligned().fg(Color::White),
-            area,
-        );
     }
 }
 
@@ -83,4 +52,3 @@ fn get_wifi_status() -> Option<(String, String)> {
 
     Some(("disconnected".to_string(), "".to_string()))
 }
-

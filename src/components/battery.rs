@@ -1,11 +1,3 @@
-use ratatui::{
-    Frame,
-    prelude::Stylize,
-    style::Color,
-    text::{Line, Span},
-    widgets::Paragraph,
-};
-
 #[derive(Debug)]
 pub struct Battery {
     pub percentage: String,
@@ -39,19 +31,5 @@ impl Battery {
         self.battery_manager.refresh(&mut self.battery)?;
         self.percentage = ((self.battery.state_of_charge().value * 100.0) as i32).to_string();
         Ok(())
-    }
-
-    pub fn render(&self, frame: &mut Frame, area: ratatui::layout::Rect) {
-        let bat_icon = Span::raw("󰁹 ".to_owned());
-        let bat_span = Span::raw(self.percentage.clone() + "%");
-
-        let battery_line = Line::from(vec![bat_icon, bat_span]);
-
-        frame.render_widget(
-            Paragraph::new(battery_line)
-                .right_aligned()
-                .fg(Color::White),
-            area,
-        );
     }
 }

@@ -1,10 +1,3 @@
-use ratatui::{
-    Frame,
-    prelude::Stylize,
-    style::Color,
-    text::{Line, Span},
-    widgets::Paragraph,
-};
 use regex::Regex;
 use std::process::Command;
 
@@ -25,21 +18,6 @@ impl Brightness {
 
     pub fn update(&mut self) {
         self.level = get_system_brightness().unwrap_or_default();
-    }
-
-    pub fn render(&self, frame: &mut Frame, area: ratatui::layout::Rect) {
-        let brightness_icon = Span::raw("󰃠 ".to_owned());
-        let brightness_span = Span::raw(self.level.clone());
-        let space_span = Span::raw(" ");
-
-        let brightness_line = Line::from(vec![brightness_icon, brightness_span, space_span]);
-
-        frame.render_widget(
-            Paragraph::new(brightness_line)
-                .right_aligned()
-                .fg(Color::White),
-            area,
-        );
     }
 }
 

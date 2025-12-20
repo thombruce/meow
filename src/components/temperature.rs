@@ -1,10 +1,3 @@
-use ratatui::{
-    Frame,
-    prelude::Stylize,
-    style::Color,
-    text::{Line, Span},
-    widgets::Paragraph,
-};
 use sysinfo::Components;
 
 #[derive(Debug)]
@@ -35,18 +28,4 @@ impl Temperature {
             self.value = format!("{:.0}", temp);
         }
     }
-
-    pub fn render(&self, frame: &mut Frame, area: ratatui::layout::Rect) {
-        let temp_icon = Span::raw(" ".to_owned());
-        let temp_span = Span::raw(self.value.clone() + "°C");
-        let space_span = Span::raw(" ");
-
-        let temp_line = Line::from(vec![temp_icon, temp_span, space_span]);
-
-        frame.render_widget(
-            Paragraph::new(temp_line).right_aligned().fg(Color::White),
-            area,
-        );
-    }
 }
-
