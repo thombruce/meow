@@ -1,9 +1,12 @@
+use std::time::{Duration, Instant};
 use sysinfo::{CpuRefreshKind, RefreshKind, System};
 
 #[derive(Debug)]
 pub struct Cpu {
     pub usage: String,
     system: System,
+    last_update: Instant,
+    update_interval: Duration,
 }
 
 impl Cpu {
@@ -15,16 +18,23 @@ impl Cpu {
         Self {
             usage: "0".to_string(),
             system,
+            last_update: Instant::now(),
+            update_interval: Duration::from_secs(3),
         }
     }
 
     pub fn update(&mut self) {
-        self.system.refresh_cpu_all();
+        let now = Instant::now();
+        if now.duration_since(self.last_update) >= self.update_interval {
+            self.system.refresh_cpu_all();
 
-        let iter = self.system.cpus().iter();
-        let count = iter.len() as f32;
-        let sum = iter.fold(0.0, |acc, x| acc + x.cpu_usage());
-        let avg: u32 = (sum / count) as u32;
-        self.usage = avg.to_string();
+            let iter = self.system.cpus().iter();
+            let count = iter.len() as f32;
+            let sum = iter.fold(0.0, |acc, x| acc + x.cpu_usage());
+            let avg: u32 = (sum / count) as u32;
+            self.usage = avg.to_string();
+            
+            self.last_update = now;
+        }
     }
 }

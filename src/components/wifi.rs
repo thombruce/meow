@@ -1,9 +1,12 @@
 use std::process::Command;
+use std::time::{Duration, Instant};
 
 #[derive(Debug)]
 pub struct Wifi {
     pub status: String,
     pub network: String,
+    last_update: Instant,
+    update_interval: Duration,
 }
 
 impl Wifi {
@@ -11,13 +14,23 @@ impl Wifi {
         let (status, network) =
             get_wifi_status().unwrap_or(("disconnected".to_string(), "".to_string()));
 
-        Self { status, network }
+        Self { 
+            status, 
+            network,
+            last_update: Instant::now(),
+            update_interval: Duration::from_secs(2),
+        }
     }
 
     pub fn update(&mut self) {
-        if let Some((status, network)) = get_wifi_status() {
-            self.status = status;
-            self.network = network;
+        let now = Instant::now();
+        if now.duration_since(self.last_update) >= self.update_interval {
+            if let Some((status, network)) = get_wifi_status() {
+                self.status = status;
+                self.network = network;
+            }
+            
+            self.last_update = now;
         }
     }
 }

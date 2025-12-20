@@ -1,9 +1,12 @@
+use std::time::{Duration, Instant};
 use sysinfo::Components;
 
 #[derive(Debug)]
 pub struct Temperature {
     pub value: String,
     components: Components,
+    last_update: Instant,
+    update_interval: Duration,
 }
 
 impl Temperature {
@@ -13,19 +16,26 @@ impl Temperature {
         Self {
             value: "0".to_string(),
             components,
+            last_update: Instant::now(),
+            update_interval: Duration::from_secs(5),
         }
     }
 
     pub fn update(&mut self) {
-        self.components.refresh(true);
+        let now = Instant::now();
+        if now.duration_since(self.last_update) >= self.update_interval {
+            self.components.refresh(true);
 
-        if let Some(component) = self.components.iter().find(|c| {
-            c.label().to_lowercase().contains("cpu")
-                || c.label().to_lowercase().contains("core")
-                || c.label().to_lowercase().contains("package")
-        }) && let Some(temp) = component.temperature()
-        {
-            self.value = format!("{:.0}", temp);
+            if let Some(component) = self.components.iter().find(|c| {
+                c.label().to_lowercase().contains("cpu")
+                    || c.label().to_lowercase().contains("core")
+                    || c.label().to_lowercase().contains("package")
+            }) && let Some(temp) = component.temperature()
+            {
+                self.value = format!("{:.0}", temp);
+            }
+            
+            self.last_update = now;
         }
     }
 }

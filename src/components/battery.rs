@@ -1,8 +1,12 @@
+use std::time::{Duration, Instant};
+
 #[derive(Debug)]
 pub struct Battery {
     pub percentage: String,
     battery_manager: battery::Manager,
     battery: battery::Battery,
+    last_update: Instant,
+    update_interval: Duration,
 }
 
 impl Battery {
@@ -24,12 +28,19 @@ impl Battery {
             percentage: ((battery.state_of_charge().value * 100.0) as i32).to_string(),
             battery_manager: manager,
             battery,
+            last_update: Instant::now(),
+            update_interval: Duration::from_secs(30),
         })
     }
 
     pub fn update(&mut self) -> color_eyre::Result<()> {
-        self.battery_manager.refresh(&mut self.battery)?;
-        self.percentage = ((self.battery.state_of_charge().value * 100.0) as i32).to_string();
+        let now = Instant::now();
+        if now.duration_since(self.last_update) >= self.update_interval {
+            self.battery_manager.refresh(&mut self.battery)?;
+            self.percentage = ((self.battery.state_of_charge().value * 100.0) as i32).to_string();
+            
+            self.last_update = now;
+        }
         Ok(())
     }
 }
