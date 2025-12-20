@@ -1,4 +1,4 @@
-use crate::components::{Battery, Brightness, Cpu, Ram, Temperature, Volume, Wifi};
+use crate::components::{Battery, Brightness, Cpu, Ram, Temperature, Volume, Vpn, Wifi};
 use ratatui::{
     Frame,
     prelude::Stylize,
@@ -13,6 +13,7 @@ pub struct SystemBar {
     cpu: Cpu,
     ram: Ram,
     wifi: Wifi,
+    vpn: Vpn,
     brightness: Brightness,
     volume: Volume,
     battery: Battery,
@@ -25,6 +26,7 @@ impl SystemBar {
             cpu: Cpu::new(),
             ram: Ram::new(),
             wifi: Wifi::new(),
+            vpn: Vpn::new(),
             brightness: Brightness::new(),
             volume: Volume::new(),
             battery: Battery::new()?,
@@ -36,6 +38,7 @@ impl SystemBar {
         self.cpu.update();
         self.ram.update();
         self.wifi.update();
+        self.vpn.update();
         self.brightness.update();
         self.volume.update();
         self.battery.update()?;
@@ -66,6 +69,17 @@ impl SystemBar {
                 }
                 .to_string(),
             ),
+            Span::raw(" "),
+            Span::raw(" "),
+            Span::raw(self.vpn.short.clone()), // Add `+ " "` if we include the section below
+            // Span::raw(
+            //     if self.vpn.status == "connected" && !self.vpn.country.is_empty() {
+            //         &self.vpn.country
+            //     } else {
+            //         "Off"
+            //     }
+            //     .to_string(),
+            // ),
             Span::raw(" | "),
             Span::raw("󰃠 "),
             Span::raw(self.brightness.level.clone()),
