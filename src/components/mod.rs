@@ -1,7 +1,25 @@
+pub mod battery;
+pub mod brightness;
+pub mod cpu;
+pub mod ram;
+pub mod status_bar;
 pub mod system_bar;
+pub mod system_info;
+pub mod temperature;
 pub mod time;
+pub mod volume;
+pub mod wifi;
 pub mod workspaces;
 
+pub use battery::Battery;
+pub use brightness::Brightness;
+pub use cpu::Cpu;
+pub use ram::Ram;
+pub use status_bar::StatusBar;
 pub use system_bar::SystemBar;
+pub use system_info::SystemInfo;
+pub use temperature::Temperature;
 pub use time::Time;
+pub use volume::Volume;
+pub use wifi::Wifi;
 pub use workspaces::Workspaces;
