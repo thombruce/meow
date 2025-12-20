@@ -7,7 +7,7 @@ use ratatui::{
 use std::time::Duration;
 
 mod components;
-use components::{SystemBar, Time, Workspaces};
+use components::{MiddleBar, SystemBar, Workspaces};
 
 fn main() -> color_eyre::Result<()> {
     color_eyre::install()?;
@@ -22,8 +22,8 @@ fn main() -> color_eyre::Result<()> {
 pub struct App {
     /// Is the application running?
     running: bool,
-    time: Time,
     workspaces: Workspaces,
+    middle_bar: MiddleBar,
     system_bar: SystemBar,
 }
 
@@ -32,8 +32,8 @@ impl App {
     pub fn new() -> color_eyre::Result<Self> {
         Ok(Self {
             running: true,
-            time: Time::new(),
             workspaces: Workspaces::new(),
+            middle_bar: MiddleBar::new()?,
             system_bar: SystemBar::new()?,
         })
     }
@@ -49,8 +49,10 @@ impl App {
     }
 
     fn update_components(&mut self) {
-        self.time.update();
         self.workspaces.update();
+        if let Err(e) = self.middle_bar.update() {
+            eprintln!("Error updating middle bar: {}", e);
+        }
         if let Err(e) = self.system_bar.update() {
             eprintln!("Error updating system bar: {}", e);
         }
@@ -68,7 +70,7 @@ impl App {
             .split(frame.area());
 
         self.workspaces.render(frame, layout[0]);
-        self.time.render(frame, layout[1]);
+        self.middle_bar.render(frame, layout[1]);
         self.system_bar.render(frame, layout[2]);
     }
 
