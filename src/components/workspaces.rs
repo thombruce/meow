@@ -26,7 +26,7 @@ impl Workspaces {
         self.active_workspace = get_active_workspace().unwrap_or_default();
     }
 
-    pub fn workspace_spans(&self) -> Vec<Span<'_>> {
+    pub fn render(&self) -> Vec<Span<'_>> {
         return self
             .workspaces
             .iter()

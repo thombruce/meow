@@ -19,7 +19,7 @@ impl LeftBar {
     }
 
     pub fn render(&self, frame: &mut Frame, area: ratatui::layout::Rect) {
-        let spans = self.workspaces.workspace_spans();
+        let spans = self.workspaces.render();
 
         let left_line = Line::from(spans);
 
