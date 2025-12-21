@@ -33,7 +33,7 @@ impl Cpu {
             let sum = iter.fold(0.0, |acc, x| acc + x.cpu_usage());
             let avg: u32 = (sum / count) as u32;
             self.usage = avg.to_string();
-            
+
             self.last_update = now;
         }
     }

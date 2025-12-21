@@ -34,7 +34,7 @@ impl Temperature {
             {
                 self.value = format!("{:.0}", temp);
             }
-            
+
             self.last_update = now;
         }
     }

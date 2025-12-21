@@ -14,8 +14,8 @@ impl Wifi {
         let (status, network) =
             get_wifi_status().unwrap_or(("disconnected".to_string(), "".to_string()));
 
-        Self { 
-            status, 
+        Self {
+            status,
             network,
             last_update: Instant::now(),
             update_interval: Duration::from_secs(2),
@@ -29,7 +29,7 @@ impl Wifi {
                 self.status = status;
                 self.network = network;
             }
-            
+
             self.last_update = now;
         }
     }

@@ -28,10 +28,11 @@ impl Ram {
         if now.duration_since(self.last_update) >= self.update_interval {
             self.system.refresh_memory();
 
-            let mem_percent: u32 =
-                (self.system.used_memory() as f64 / self.system.total_memory() as f64 * 100.0) as u32;
+            let mem_percent: u32 = (self.system.used_memory() as f64
+                / self.system.total_memory() as f64
+                * 100.0) as u32;
             self.usage = mem_percent.to_string();
-            
+
             self.last_update = now;
         }
     }
