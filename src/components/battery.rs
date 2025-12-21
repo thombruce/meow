@@ -15,14 +15,8 @@ impl Battery {
         let manager = battery::Manager::new()?;
         let battery = match manager.batteries()?.next() {
             Some(Ok(battery)) => battery,
-            Some(Err(e)) => {
-                eprintln!("Unable to access battery information");
-                return Err(e.into());
-            }
-            None => {
-                eprintln!("Unable to find any batteries");
-                return Err(std::io::Error::from(std::io::ErrorKind::NotFound).into());
-            }
+            Some(Err(e)) => return Err(e.into()),
+            None => return Err(std::io::Error::from(std::io::ErrorKind::NotFound).into()),
         };
 
         let is_charging = matches!(battery.state(), battery::State::Charging);

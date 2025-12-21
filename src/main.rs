@@ -50,9 +50,7 @@ impl App {
         // Start file watcher
         Self::start_config_watcher(reload_tx)?;
 
-        println!(
-            "Configuration hot-reload enabled. Edit ~/.config/catfoodBar/config.json to see changes live!"
-        );
+
 
         Ok(Self {
             running: true,
@@ -88,16 +86,14 @@ impl App {
                 NotifyConfig::default().with_poll_interval(Duration::from_secs(1)),
             ) {
                 Ok(w) => w,
-                Err(e) => {
-                    eprintln!("Failed to create file watcher: {}", e);
+                Err(_) => {
                     return;
                 }
             };
 
             // Watch the config directory
             if let Some(parent) = config_path.parent() {
-                if let Err(e) = watcher.watch(parent, RecursiveMode::NonRecursive) {
-                    eprintln!("Failed to watch config directory: {}", e);
+                if let Err(_) = watcher.watch(parent, RecursiveMode::NonRecursive) {
                     return;
                 }
             }
@@ -109,9 +105,7 @@ impl App {
                 if let Some(path) = event.paths.first() {
                     if path == &config_path {
                         if matches!(event.kind, EventKind::Modify(_) | EventKind::Create(_)) {
-                            println!("Configuration file changed, reloading...");
-                            if let Err(e) = reload_tx.send(()).await {
-                                eprintln!("Failed to send reload signal: {}", e);
+                            if let Err(_) = reload_tx.send(()).await {
                                 break;
                             }
                         }
@@ -129,11 +123,7 @@ impl App {
             tokio::select! {
                 _ = self.reload_rx.recv() => {
                     // Handle config reload
-                    if let Err(e) = self.component_manager.reload() {
-                        eprintln!("Failed to reload configuration: {}", e);
-                    } else {
-                        println!("Configuration reloaded successfully!");
-                    }
+                    let _ = self.component_manager.reload();
                 }
                 _ = tokio::time::sleep(Duration::from_millis(333)) => {
                     // Normal update cycle
@@ -147,18 +137,10 @@ impl App {
     }
 
     fn update_components(&mut self) {
-        if let Err(e) = self.component_manager.update() {
-            eprintln!("Error updating components: {}", e);
-        }
-        if let Err(e) = self.left_bar.update() {
-            eprintln!("Error updating left bar: {}", e);
-        }
-        if let Err(e) = self.middle_bar.update() {
-            eprintln!("Error updating middle bar: {}", e);
-        }
-        if let Err(e) = self.right_bar.update() {
-            eprintln!("Error updating right bar: {}", e);
-        }
+        let _ = self.component_manager.update();
+        let _ = self.left_bar.update();
+        let _ = self.middle_bar.update();
+        let _ = self.right_bar.update();
     }
 
     /// Renders the user interface.

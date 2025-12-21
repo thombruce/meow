@@ -54,11 +54,6 @@ fn get_workspaces() -> Option<Vec<String>> {
             serde_json::from_str(stdout).expect("failed to parse workspaces");
 
         return Some(json.iter().map(|j| j.id.clone().to_string()).collect());
-    } else {
-        eprintln!(
-            "Error: {}",
-            str::from_utf8(&output.stderr).unwrap_or("unknown error")
-        );
     }
 
     None
@@ -76,11 +71,6 @@ fn get_active_workspace() -> Option<String> {
             serde_json::from_str(stdout).expect("failed to parse active workspace");
 
         return Some(json.id.clone().to_string());
-    } else {
-        eprintln!(
-            "Error: {}",
-            str::from_utf8(&output.stderr).unwrap_or("unknown error")
-        );
     }
 
     None
