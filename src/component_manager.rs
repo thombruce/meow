@@ -3,6 +3,7 @@ use crate::components::{
     Weather, Wifi, Workspaces,
 };
 use crate::config::Config;
+use chrono::Timelike;
 use ratatui::{prelude::Stylize, style::Color, text::Span};
 use std::collections::HashMap;
 
@@ -111,7 +112,13 @@ impl Component {
             Component::Time(component) => {
                 let span = Span::raw(component.time_string.clone());
                 if colorize {
-                    vec![span.fg(Color::Blue)]
+                    let hour = chrono::Local::now().hour();
+                    let color = if (6..18).contains(&hour) {
+                        Color::Yellow // Daytime (6:00 - 17:59): Yellow
+                    } else {
+                        Color::Magenta // Nighttime (18:00 - 5:59): Purple
+                    };
+                    vec![span.fg(color)]
                 } else {
                     vec![span]
                 }
