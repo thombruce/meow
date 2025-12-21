@@ -1,25 +1,40 @@
-use crate::components::Workspaces;
-use ratatui::{Frame, prelude::Stylize, style::Color, text::Line, widgets::Paragraph};
+use crate::component_manager::ComponentManager;
+use ratatui::{
+    Frame,
+    prelude::Stylize,
+    style::Color,
+    text::{Line, Span},
+    widgets::Paragraph,
+};
 
 #[derive(Debug)]
-pub struct LeftBar {
-    workspaces: Workspaces,
-}
+pub struct LeftBar;
 
 impl LeftBar {
     pub fn new() -> color_eyre::Result<Self> {
-        Ok(Self {
-            workspaces: Workspaces::new(),
-        })
+        Ok(Self)
     }
 
     pub fn update(&mut self) -> color_eyre::Result<()> {
-        self.workspaces.update();
         Ok(())
     }
 
-    pub fn render(&self, frame: &mut Frame, area: ratatui::layout::Rect) {
-        let spans = self.workspaces.render();
+    pub fn render(
+        &self,
+        frame: &mut Frame,
+        area: ratatui::layout::Rect,
+        component_manager: &ComponentManager,
+    ) {
+        let components = component_manager.get_bar_components("left");
+
+        if components.is_empty() {
+            return;
+        }
+
+        let spans: Vec<Span> = components
+            .iter()
+            .flat_map(|component| component.render_as_spans())
+            .collect();
 
         let left_line = Line::from(spans);
 

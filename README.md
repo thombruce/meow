@@ -19,6 +19,27 @@ Bottom of screen:
 kitten panel --edge=bottom cargo run
 ```
 
+## Configuration
+
+catfoodBar supports live configuration via `~/.config/catfoodBar/config.json`. The first time you run the application, a default configuration file will be created.
+
+### Hot-Reload
+
+Configuration changes are automatically detected and applied without restarting the application. Simply edit your `config.json` file and the bar layout will update in real-time!
+
+### Error Logging
+
+All errors are logged to `~/.local/share/catfoodBar/logs/catfoodBar.log` in ISO format:
+```
+2025-12-21T03:45:12Z [ERROR] [COMPONENT_WORKSPACES] Error: Failed to get workspaces
+2025-12-21T03:45:13Z [ERROR] [CONFIG] Failed to reload configuration: ...
+2025-12-21T03:45:14Z [ERROR] [FILE_WATCHER] Failed to create file watcher: ...
+```
+
+The log file keeps only the last 1000 lines.
+
+See [CONFIG_EXAMPLE.md](CONFIG_EXAMPLE.md) for detailed configuration options and examples.
+
 ## License
 
 Copyright (c) Thom Bruce <thom@thombruce.com>

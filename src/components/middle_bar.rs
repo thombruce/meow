@@ -1,4 +1,4 @@
-use crate::components::{Time, Weather};
+use crate::component_manager::ComponentManager;
 use ratatui::{
     Frame,
     prelude::Stylize,
@@ -8,31 +8,33 @@ use ratatui::{
 };
 
 #[derive(Debug)]
-pub struct MiddleBar {
-    time: Time,
-    weather: Weather,
-}
+pub struct MiddleBar;
 
 impl MiddleBar {
     pub fn new() -> color_eyre::Result<Self> {
-        Ok(Self {
-            time: Time::new(),
-            weather: Weather::new(),
-        })
+        Ok(Self)
     }
 
     pub fn update(&mut self) -> color_eyre::Result<()> {
-        self.time.update();
-        self.weather.update();
         Ok(())
     }
 
-    pub fn render(&self, frame: &mut Frame, area: ratatui::layout::Rect) {
-        let spans = vec![
-            Span::raw(self.time.time_string.clone()),
-            Span::raw(" | "),
-            Span::raw(self.weather.render()),
-        ];
+    pub fn render(
+        &self,
+        frame: &mut Frame,
+        area: ratatui::layout::Rect,
+        component_manager: &ComponentManager,
+    ) {
+        let components = component_manager.get_bar_components("middle");
+
+        if components.is_empty() {
+            return;
+        }
+
+        let spans: Vec<Span> = components
+            .iter()
+            .flat_map(|component| component.render_as_spans())
+            .collect();
 
         let middle_line = Line::from(spans);
 

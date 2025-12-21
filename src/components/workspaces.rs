@@ -2,6 +2,8 @@ use ratatui::{prelude::Stylize, style::Color, text::Span};
 use serde::Deserialize;
 use std::process::Command;
 
+use crate::logging;
+
 #[derive(Deserialize, Debug)]
 struct Workspace {
     id: i32,
@@ -27,8 +29,7 @@ impl Workspaces {
     }
 
     pub fn render(&self) -> Vec<Span<'_>> {
-        return self
-            .workspaces
+        self.workspaces
             .iter()
             .map(|w| {
                 if w == &self.active_workspace {
@@ -39,7 +40,7 @@ impl Workspaces {
                     Span::raw(format!(" {} ", w))
                 }
             })
-            .collect::<Vec<Span>>();
+            .collect::<Vec<Span>>()
     }
 }
 
@@ -56,9 +57,9 @@ fn get_workspaces() -> Option<Vec<String>> {
 
         return Some(json.iter().map(|j| j.id.clone().to_string()).collect());
     } else {
-        eprintln!(
-            "Error: {}",
-            str::from_utf8(&output.stderr).unwrap_or("unknown error")
+        logging::log_component_error(
+            "WORKSPACES",
+            str::from_utf8(&output.stderr).unwrap_or("unknown error"),
         );
     }
 
@@ -78,9 +79,9 @@ fn get_active_workspace() -> Option<String> {
 
         return Some(json.id.clone().to_string());
     } else {
-        eprintln!(
-            "Error: {}",
-            str::from_utf8(&output.stderr).unwrap_or("unknown error")
+        logging::log_component_error(
+            "WORKSPACES",
+            str::from_utf8(&output.stderr).unwrap_or("unknown error"),
         );
     }
 

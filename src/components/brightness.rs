@@ -1,3 +1,4 @@
+use crate::logging;
 use regex::Regex;
 use std::process::Command;
 
@@ -39,11 +40,14 @@ fn get_system_brightness() -> Option<String> {
             return Some(brightness.to_string());
         }
 
-        eprintln!("Failed to parse brightness from output: {}", brightness_str);
+        logging::log_component_error(
+            "BRIGHTNESS",
+            &format!("Failed to parse brightness from output: {}", brightness_str),
+        );
     } else {
-        eprintln!(
-            "Error: {}",
-            str::from_utf8(&output.stderr).unwrap_or("unknown error")
+        logging::log_component_error(
+            "BRIGHTNESS",
+            str::from_utf8(&output.stderr).unwrap_or("unknown error"),
         );
     }
 

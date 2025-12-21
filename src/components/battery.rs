@@ -1,3 +1,4 @@
+use crate::logging;
 use std::time::{Duration, Instant};
 
 #[derive(Debug)]
@@ -16,11 +17,14 @@ impl Battery {
         let battery = match manager.batteries()?.next() {
             Some(Ok(battery)) => battery,
             Some(Err(e)) => {
-                eprintln!("Unable to access battery information");
+                logging::log_component_error(
+                    "BATTERY",
+                    &format!("Unable to access battery information: {}", e),
+                );
                 return Err(e.into());
             }
             None => {
-                eprintln!("Unable to find any batteries");
+                logging::log_component_error("BATTERY", "Unable to find any batteries");
                 return Err(std::io::Error::from(std::io::ErrorKind::NotFound).into());
             }
         };
