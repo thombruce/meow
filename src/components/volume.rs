@@ -20,6 +20,11 @@ impl Volume {
         self.level = level.to_string();
         self.is_muted = is_muted;
     }
+
+    pub fn render(&self) -> String {
+        let icon = if self.is_muted { "󰝟" } else { "󰕾" };
+        format!("{} {}%", icon, self.level)
+    }
 }
 
 fn get_system_volume() -> Option<(i32, bool)> {

@@ -19,6 +19,10 @@ impl Brightness {
     pub fn update(&mut self) {
         self.level = get_system_brightness().unwrap_or_default();
     }
+
+    pub fn render(&self) -> String {
+        format!("󰃠 {}", self.level)
+    }
 }
 
 fn get_system_brightness() -> Option<String> {

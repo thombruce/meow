@@ -120,6 +120,11 @@ impl Weather {
             .clone()
     }
 
+    pub fn render(&self) -> String {
+        let data = self.get_weather_data();
+        format!("{} {}°C", data.icon, data.temperature)
+    }
+
     async fn fetch_weather_async() -> color_eyre::Result<WeatherResponse> {
         // Using a free weather API that doesn't require API key
         // Note: This uses wttr.in for current weather

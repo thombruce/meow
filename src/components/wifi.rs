@@ -33,6 +33,22 @@ impl Wifi {
             self.last_update = now;
         }
     }
+
+    pub fn render(&self) -> String {
+        let icon = if self.status == "connected" {
+            "󰤨"
+        } else {
+            "󰤮"
+        };
+
+        let network_text = if self.status == "connected" && !self.network.is_empty() {
+            &self.network
+        } else {
+            "Off"
+        };
+
+        format!("{} {}", icon, network_text)
+    }
 }
 
 fn get_wifi_status() -> Option<(String, String)> {

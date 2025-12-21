@@ -40,6 +40,10 @@ impl Vpn {
             self.last_update = now;
         }
     }
+
+    pub fn render(&self) -> String {
+        format!(" {}", self.short)
+    }
 }
 
 fn get_vpn_status() -> Option<(String, String, String)> {

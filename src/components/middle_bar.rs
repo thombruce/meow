@@ -31,8 +31,7 @@ impl MiddleBar {
         let spans = vec![
             Span::raw(self.time.time_string.clone()),
             Span::raw(" | "),
-            Span::raw(self.weather.get_weather_data().icon.clone() + " "),
-            Span::raw(self.weather.get_weather_data().temperature.clone() + "°C"),
+            Span::raw(self.weather.render()),
         ];
 
         let middle_line = Line::from(spans);

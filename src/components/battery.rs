@@ -48,4 +48,9 @@ impl Battery {
         }
         Ok(())
     }
+
+    pub fn render(&self) -> String {
+        let icon = if self.is_charging { "󰂄" } else { "󰁹" };
+        format!("{} {}%", icon, self.percentage)
+    }
 }

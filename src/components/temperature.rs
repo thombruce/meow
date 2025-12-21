@@ -38,4 +38,8 @@ impl Temperature {
             self.last_update = now;
         }
     }
+
+    pub fn render(&self) -> String {
+        format!(" {}°C", self.value)
+    }
 }

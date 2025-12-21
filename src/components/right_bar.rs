@@ -47,60 +47,25 @@ impl RightBar {
 
     pub fn render(&self, frame: &mut Frame, area: ratatui::layout::Rect) {
         let spans = vec![
-            Span::raw(" "),
-            Span::raw(self.temperature.value.clone() + "°C"),
+            Span::raw(self.temperature.render()),
             Span::raw(" "),
-            Span::raw("󰻠 "),
-            Span::raw(self.cpu.usage.clone() + "%"),
+            Span::raw(self.cpu.render()),
             Span::raw(" "),
-            Span::raw("󰍛 "),
-            Span::raw(self.ram.usage.clone() + "%"),
+            Span::raw(self.ram.render()),
             Span::raw(" | "),
-            Span::raw(if self.wifi.status == "connected" {
-                "󰤨 "
-            } else {
-                "󰤮 "
-            }),
-            Span::raw(
-                if self.wifi.status == "connected" && !self.wifi.network.is_empty() {
-                    &self.wifi.network
-                } else {
-                    "Off"
-                }
-                .to_string(),
-            ),
+            Span::raw(self.wifi.render()),
             Span::raw(" "),
-            Span::raw(" "),
-            Span::raw(self.vpn.short.clone()), // Add `+ " "` if we include the section below
-            // Span::raw(
-            //     if self.vpn.status == "connected" && !self.vpn.country.is_empty() {
-            //         &self.vpn.country
-            //     } else {
-            //         "Off"
-            //     }
-            //     .to_string(),
-            // ),
+            Span::raw(self.vpn.render()),
             Span::raw(" | "),
-            Span::raw("󰃠 "),
-            Span::raw(self.brightness.level.clone()),
+            Span::raw(self.brightness.render()),
             Span::raw(" "),
             if self.volume.is_muted {
-                Span::raw("󰝟 ").fg(Color::DarkGray)
+                Span::raw(self.volume.render()).fg(Color::DarkGray)
             } else {
-                Span::raw("󰕾 ")
-            },
-            if self.volume.is_muted {
-                Span::raw(self.volume.level.clone() + "%").fg(Color::DarkGray)
-            } else {
-                Span::raw(self.volume.level.clone() + "%")
+                Span::raw(self.volume.render())
             },
             Span::raw(" | "),
-            Span::raw(if self.battery.is_charging {
-                "󰂄 "
-            } else {
-                "󰁹 "
-            }),
-            Span::raw(self.battery.percentage.clone() + "%"),
+            Span::raw(self.battery.render()),
         ];
 
         let right_line = Line::from(spans);

@@ -36,4 +36,8 @@ impl Ram {
             self.last_update = now;
         }
     }
+
+    pub fn render(&self) -> String {
+        format!("󰍛 {}%", self.usage)
+    }
 }
