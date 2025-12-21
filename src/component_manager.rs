@@ -1,6 +1,6 @@
 use crate::components::{
-    Battery, Brightness, Cpu, ErrorIcon, Ram, Separator, Space, Temperature, Time, Volume,
-    Weather, Wifi, Workspaces,
+    Battery, Brightness, Cpu, ErrorIcon, Ram, Separator, Space, Temperature, Time, Volume, Weather,
+    Wifi, Workspaces,
 };
 use crate::config::Config;
 use crate::lua_component::{LuaComponent, LuaComponentRegistry};
