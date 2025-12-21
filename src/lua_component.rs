@@ -102,6 +102,8 @@ impl LuaComponent {
             "white" => Color::White,
             "black" => Color::Black,
             "gray" | "grey" => Color::Gray,
+            // TODO: No such colors, so we're defaulting to DarkGray.
+            // We should fix this by expanding color support (Kitty supports this.)
             "dark_red" => Color::DarkGray,
             "dark_green" => Color::DarkGray,
             "dark_yellow" => Color::DarkGray,
