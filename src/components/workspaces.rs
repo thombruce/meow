@@ -1,9 +1,4 @@
-use ratatui::{
-    Frame,
-    prelude::Stylize,
-    style::Color,
-    text::{Line, Span},
-};
+use ratatui::{prelude::Stylize, style::Color, text::Span};
 use serde::Deserialize;
 use std::process::Command;
 
@@ -31,8 +26,9 @@ impl Workspaces {
         self.active_workspace = get_active_workspace().unwrap_or_default();
     }
 
-    pub fn render(&self, frame: &mut Frame, area: ratatui::layout::Rect) {
-        let workspace_spans = self
+    // TODO: Fix mismatched_lifetime_syntaxes
+    pub fn workspace_spans(&self) -> Vec<Span> {
+        return self
             .workspaces
             .iter()
             .map(|w| {
@@ -45,8 +41,6 @@ impl Workspaces {
                 }
             })
             .collect::<Vec<Span>>();
-
-        frame.render_widget(Line::from(workspace_spans).left_aligned(), area);
     }
 }
 
