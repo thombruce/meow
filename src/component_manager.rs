@@ -3,7 +3,7 @@ use crate::components::{
     Weather, Wifi, Workspaces,
 };
 use crate::config::Config;
-use ratatui::{prelude::Stylize, style::Color, text::Span};
+use ratatui::{prelude::Stylize, text::Span};
 use std::collections::HashMap;
 
 #[derive(Debug)]
@@ -105,19 +105,19 @@ impl Component {
         }
     }
 
-    pub fn render_as_spans(&self) -> Vec<Span<'_>> {
+    pub fn render_as_spans_with_colorize(&self, colorize: bool) -> Vec<Span<'_>> {
         match self {
             Component::Workspaces(component) => component.render(),
-            Component::Time(component) => vec![Span::raw(component.time_string.clone())],
-            Component::Weather(component) => vec![Span::raw(component.render())],
-            Component::Temperature(component) => vec![Span::raw(component.render())],
-            Component::Cpu(component) => vec![Span::raw(component.render())],
-            Component::Ram(component) => vec![Span::raw(component.render())],
-            Component::Wifi(component) => vec![Span::raw(component.render())],
-            Component::Vpn(component) => vec![Span::raw(component.render())],
-            Component::Brightness(component) => vec![Span::raw(component.render())],
-            Component::Volume(component) => vec![Span::raw(component.render())],
-            Component::Battery(component) => vec![Span::raw(component.render())],
+            Component::Time(component) => component.render_as_spans(colorize),
+            Component::Weather(component) => component.render_as_spans(colorize),
+            Component::Temperature(component) => component.render_as_spans(colorize),
+            Component::Cpu(component) => component.render_as_spans(colorize),
+            Component::Ram(component) => component.render_as_spans(colorize),
+            Component::Wifi(component) => component.render_as_spans(colorize),
+            Component::Vpn(component) => component.render_as_spans(colorize),
+            Component::Brightness(component) => component.render_as_spans(colorize),
+            Component::Volume(component) => component.render_as_spans(colorize),
+            Component::Battery(component) => component.render_as_spans(colorize),
             Component::Separator(component) => vec![Span::raw(component.render())],
             Component::Space(component) => vec![Span::raw(component.render())],
             Component::ErrorIcon(component) => component.render_as_spans(),
@@ -131,12 +131,12 @@ impl Component {
         }
     }
 
-    pub fn render_as_spans_with_muting(&self) -> Vec<Span<'_>> {
-        let spans = self.render_as_spans();
+    pub fn render_as_spans_with_muting_and_colorize(&self, colorize: bool) -> Vec<Span<'_>> {
+        let spans = self.render_as_spans_with_colorize(colorize);
         if self.is_muted() {
             spans
                 .into_iter()
-                .map(|span| span.fg(Color::DarkGray))
+                .map(|span| span.fg(ratatui::style::Color::DarkGray))
                 .collect()
         } else {
             spans
@@ -194,6 +194,10 @@ impl ComponentManager {
         } else {
             Vec::new()
         }
+    }
+
+    pub fn get_colorize(&self) -> bool {
+        self.config.colorize
     }
 
     pub fn reload(&mut self) -> color_eyre::Result<()> {
