@@ -151,7 +151,12 @@ impl Component {
             Component::Wifi(component) => {
                 let span = Span::raw(component.render());
                 if colorize {
-                    vec![span.fg(Color::Blue)]
+                    let color = if component.status == "disconnected" {
+                        Color::Red
+                    } else {
+                        Color::Blue
+                    };
+                    vec![span.fg(color)]
                 } else {
                     vec![span]
                 }
@@ -159,7 +164,12 @@ impl Component {
             Component::Vpn(component) => {
                 let span = Span::raw(component.render());
                 if colorize {
-                    vec![span.fg(Color::Magenta)]
+                    let color = if component.status == "disconnected" {
+                        Color::DarkGray
+                    } else {
+                        Color::Magenta
+                    };
+                    vec![span.fg(color)]
                 } else {
                     vec![span]
                 }
