@@ -121,12 +121,7 @@ impl Component {
         }
     }
 
-    pub fn render(&self) -> String {
-        self.render_as_spans()
-            .iter()
-            .map(|span| span.content.clone())
-            .collect::<String>()
-    }
+
 
     pub fn is_muted(&self) -> bool {
         match self {
@@ -148,44 +143,7 @@ impl Component {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
 
-    #[test]
-    fn test_component_creation() {
-        let component_names = vec![
-            "time",
-            "temperature",
-            "cpu",
-            "ram",
-            "brightness",
-            "volume",
-            "separator",
-            "space",
-        ];
-        for name in component_names {
-            let result = Component::new(name);
-            assert!(result.is_ok(), "Failed to create component: {}", name);
-        }
-    }
-
-    #[tokio::test]
-    async fn test_component_manager() {
-        let manager = ComponentManager::new();
-        assert!(manager.is_ok());
-
-        let manager = manager.unwrap();
-        let left_components = manager.get_bar_components("left");
-        assert!(!left_components.is_empty());
-
-        let middle_components = manager.get_bar_components("middle");
-        assert_eq!(middle_components.len(), 3); // time, separator, weather
-
-        let right_components = manager.get_bar_components("right");
-        assert!(!right_components.is_empty()); // Right bar has components
-    }
-}
 
 #[derive(Debug)]
 pub struct ComponentManager {

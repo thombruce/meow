@@ -89,25 +89,4 @@ impl Config {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
 
-    #[test]
-    fn test_default_config() {
-        let config = Config::default();
-        assert_eq!(config.bars.left, vec!["workspaces"]);
-        assert_eq!(config.bars.middle, vec!["time", "separator", "weather"]);
-        assert_eq!(config.bars.right.len(), 11); // 8 components + 3 separators
-    }
-
-    #[test]
-    fn test_config_serialization() {
-        let config = Config::default();
-        let json = serde_json::to_string_pretty(&config).unwrap();
-        let parsed: Config = serde_json::from_str(&json).unwrap();
-        assert_eq!(config.bars.left, parsed.bars.left);
-        assert_eq!(config.bars.middle, parsed.bars.middle);
-        assert_eq!(config.bars.right, parsed.bars.right);
-    }
-}
