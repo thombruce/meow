@@ -1,4 +1,4 @@
-# TODO - Meow Widget Development
+# TODO - catfoodBar Widget Development
 
 ## Current State
 - Rust-based system status bar built with Ratatui
