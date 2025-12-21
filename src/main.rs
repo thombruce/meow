@@ -11,6 +11,7 @@ mod component_manager;
 mod components;
 mod config;
 
+use component_manager::ComponentManager;
 use components::{LeftBar, MiddleBar, RightBar};
 
 fn main() -> color_eyre::Result<()> {
@@ -32,6 +33,7 @@ fn main() -> color_eyre::Result<()> {
 pub struct App {
     /// Is the application running?
     running: bool,
+    component_manager: ComponentManager,
     left_bar: LeftBar,
     middle_bar: MiddleBar,
     right_bar: RightBar,
@@ -42,6 +44,7 @@ impl App {
     pub fn new() -> color_eyre::Result<Self> {
         Ok(Self {
             running: true,
+            component_manager: ComponentManager::new()?,
             left_bar: LeftBar::new()?,
             middle_bar: MiddleBar::new()?,
             right_bar: RightBar::new()?,
@@ -59,8 +62,11 @@ impl App {
     }
 
     fn update_components(&mut self) {
+        if let Err(e) = self.component_manager.update() {
+            eprintln!("Error updating components: {}", e);
+        }
         if let Err(e) = self.left_bar.update() {
-            eprintln!("Error updating middle bar: {}", e);
+            eprintln!("Error updating left bar: {}", e);
         }
         if let Err(e) = self.middle_bar.update() {
             eprintln!("Error updating middle bar: {}", e);
@@ -81,9 +87,9 @@ impl App {
             ])
             .split(frame.area());
 
-        self.left_bar.render(frame, layout[0]);
-        self.middle_bar.render(frame, layout[1]);
-        self.right_bar.render(frame, layout[2]);
+        self.left_bar.render(frame, layout[0], &self.component_manager);
+        self.middle_bar.render(frame, layout[1], &self.component_manager);
+        self.right_bar.render(frame, layout[2], &self.component_manager);
     }
 
     /// Reads the crossterm events and updates the state of [`App`].

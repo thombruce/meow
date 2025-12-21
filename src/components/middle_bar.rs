@@ -1,3 +1,4 @@
+
 use crate::component_manager::ComponentManager;
 use ratatui::{
     Frame,
@@ -8,23 +9,19 @@ use ratatui::{
 };
 
 #[derive(Debug)]
-pub struct MiddleBar {
-    component_manager: ComponentManager,
-}
+pub struct MiddleBar;
 
 impl MiddleBar {
     pub fn new() -> color_eyre::Result<Self> {
-        Ok(Self {
-            component_manager: ComponentManager::new()?,
-        })
+        Ok(Self)
     }
 
     pub fn update(&mut self) -> color_eyre::Result<()> {
-        self.component_manager.update()
+        Ok(())
     }
 
-    pub fn render(&self, frame: &mut Frame, area: ratatui::layout::Rect) {
-        let components = self.component_manager.get_bar_components("middle");
+    pub fn render(&self, frame: &mut Frame, area: ratatui::layout::Rect, component_manager: &ComponentManager) {
+        let components = component_manager.get_bar_components("middle");
 
         if components.is_empty() {
             return;
