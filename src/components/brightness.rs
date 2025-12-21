@@ -1,5 +1,6 @@
 use regex::Regex;
 use std::process::Command;
+use crate::logging;
 
 static BRIGHTNESS_REGEX: std::sync::LazyLock<Regex> =
     std::sync::LazyLock::new(|| Regex::new(r"\d+%").unwrap());
@@ -38,6 +39,11 @@ fn get_system_brightness() -> Option<String> {
         if let Some(brightness) = re.find(brightness_str).map(|m| m.as_str()) {
             return Some(brightness.to_string());
         }
+
+        logging::log_component_error("BRIGHTNESS", &format!("Failed to parse brightness from output: {}", brightness_str));
+    } else {
+        logging::log_component_error("BRIGHTNESS", 
+            &str::from_utf8(&output.stderr).unwrap_or("unknown error"));
     }
 
     None

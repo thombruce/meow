@@ -138,6 +138,7 @@ dependencies = [
  "chrono",
  "color-eyre",
  "crossterm 0.29.0",
+ "lazy_static",
  "notify",
  "ratatui",
  "regex",

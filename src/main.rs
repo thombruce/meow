@@ -11,6 +11,7 @@ use tokio::sync::mpsc;
 mod component_manager;
 mod components;
 mod config;
+mod logging;
 
 use component_manager::ComponentManager;
 use components::{LeftBar, MiddleBar, RightBar};
@@ -86,14 +87,16 @@ impl App {
                 NotifyConfig::default().with_poll_interval(Duration::from_secs(1)),
             ) {
                 Ok(w) => w,
-                Err(_) => {
+                Err(e) => {
+                    logging::log_file_watcher_error(&format!("Failed to create file watcher: {}", e));
                     return;
                 }
             };
 
             // Watch the config directory
             if let Some(parent) = config_path.parent() {
-                if let Err(_) = watcher.watch(parent, RecursiveMode::NonRecursive) {
+                if let Err(e) = watcher.watch(parent, RecursiveMode::NonRecursive) {
+                    logging::log_file_watcher_error(&format!("Failed to watch config directory: {}", e));
                     return;
                 }
             }
@@ -105,7 +108,8 @@ impl App {
                 if let Some(path) = event.paths.first() {
                     if path == &config_path {
                         if matches!(event.kind, EventKind::Modify(_) | EventKind::Create(_)) {
-                            if let Err(_) = reload_tx.send(()).await {
+                            if let Err(e) = reload_tx.send(()).await {
+                                logging::log_file_watcher_error(&format!("Failed to send reload signal: {}", e));
                                 break;
                             }
                         }
@@ -123,7 +127,9 @@ impl App {
             tokio::select! {
                 _ = self.reload_rx.recv() => {
                     // Handle config reload
-                    let _ = self.component_manager.reload();
+                    if let Err(e) = self.component_manager.reload() {
+                        logging::log_config_error(&format!("Failed to reload configuration: {}", e));
+                    }
                 }
                 _ = tokio::time::sleep(Duration::from_millis(333)) => {
                     // Normal update cycle
@@ -137,10 +143,18 @@ impl App {
     }
 
     fn update_components(&mut self) {
-        let _ = self.component_manager.update();
-        let _ = self.left_bar.update();
-        let _ = self.middle_bar.update();
-        let _ = self.right_bar.update();
+        if let Err(e) = self.component_manager.update() {
+            logging::log_system_error("Component Manager", &format!("{}", e));
+        }
+        if let Err(e) = self.left_bar.update() {
+            logging::log_system_error("Left Bar", &format!("{}", e));
+        }
+        if let Err(e) = self.middle_bar.update() {
+            logging::log_system_error("Middle Bar", &format!("{}", e));
+        }
+        if let Err(e) = self.right_bar.update() {
+            logging::log_system_error("Right Bar", &format!("{}", e));
+        }
     }
 
     /// Renders the user interface.

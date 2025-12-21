@@ -1,5 +1,7 @@
 use std::process::Command;
 
+use crate::logging;
+
 #[derive(Debug)]
 pub struct Volume {
     pub level: String,
@@ -41,6 +43,11 @@ fn get_system_volume() -> Option<(i32, bool)> {
         if let Ok(volume) = parts[1].parse::<f32>() {
             return Some(((volume * 100.0) as i32, is_muted));
         }
+
+        logging::log_component_error("VOLUME", &format!("Failed to parse volume from output: {}", stdout));
+    } else {
+        logging::log_component_error("VOLUME", 
+            &str::from_utf8(&output.stderr).unwrap_or("unknown error"));
     }
 
     Some((0, false))

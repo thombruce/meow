@@ -2,6 +2,8 @@ use ratatui::{prelude::Stylize, style::Color, text::Span};
 use serde::Deserialize;
 use std::process::Command;
 
+use crate::logging;
+
 #[derive(Deserialize, Debug)]
 struct Workspace {
     id: i32,
@@ -54,6 +56,9 @@ fn get_workspaces() -> Option<Vec<String>> {
             serde_json::from_str(stdout).expect("failed to parse workspaces");
 
         return Some(json.iter().map(|j| j.id.clone().to_string()).collect());
+    } else {
+        logging::log_component_error("WORKSPACES", 
+            &str::from_utf8(&output.stderr).unwrap_or("unknown error"));
     }
 
     None
@@ -71,6 +76,9 @@ fn get_active_workspace() -> Option<String> {
             serde_json::from_str(stdout).expect("failed to parse active workspace");
 
         return Some(json.id.clone().to_string());
+    } else {
+        logging::log_component_error("WORKSPACES", 
+            &str::from_utf8(&output.stderr).unwrap_or("unknown error"));
     }
 
     None
