@@ -32,7 +32,7 @@ impl MiddleBar {
 
         let spans: Vec<Span> = components
             .iter()
-            .map(|component| Span::raw(component.render()))
+            .flat_map(|component| component.render_as_spans())
             .collect();
 
         let middle_line = Line::from(spans);

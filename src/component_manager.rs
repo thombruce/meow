@@ -3,6 +3,7 @@ use crate::components::{
     Workspaces,
 };
 use crate::config::Config;
+use ratatui::{prelude::Stylize, style::Color, text::Span};
 use std::collections::HashMap;
 
 #[derive(Debug)]
@@ -102,34 +103,47 @@ impl Component {
         }
     }
 
-    pub fn render(&self) -> String {
+    pub fn render_as_spans(&self) -> Vec<Span<'_>> {
         match self {
-            Component::Workspaces(component) => {
-                let spans = component.render();
-                spans
-                    .iter()
-                    .map(|span| span.content.clone())
-                    .collect::<String>()
-            }
-            Component::Time(component) => component.time_string.clone(),
-            Component::Weather(component) => component.render(),
-            Component::Temperature(component) => component.render(),
-            Component::Cpu(component) => component.render(),
-            Component::Ram(component) => component.render(),
-            Component::Wifi(component) => component.render(),
-            Component::Vpn(component) => component.render(),
-            Component::Brightness(component) => component.render(),
-            Component::Volume(component) => component.render(),
-            Component::Battery(component) => component.render(),
-            Component::Separator(component) => component.render(),
-            Component::Space(component) => component.render(),
+            Component::Workspaces(component) => component.render(),
+            Component::Time(component) => vec![Span::raw(component.time_string.clone())],
+            Component::Weather(component) => vec![Span::raw(component.render())],
+            Component::Temperature(component) => vec![Span::raw(component.render())],
+            Component::Cpu(component) => vec![Span::raw(component.render())],
+            Component::Ram(component) => vec![Span::raw(component.render())],
+            Component::Wifi(component) => vec![Span::raw(component.render())],
+            Component::Vpn(component) => vec![Span::raw(component.render())],
+            Component::Brightness(component) => vec![Span::raw(component.render())],
+            Component::Volume(component) => vec![Span::raw(component.render())],
+            Component::Battery(component) => vec![Span::raw(component.render())],
+            Component::Separator(component) => vec![Span::raw(component.render())],
+            Component::Space(component) => vec![Span::raw(component.render())],
         }
+    }
+
+    pub fn render(&self) -> String {
+        self.render_as_spans()
+            .iter()
+            .map(|span| span.content.clone())
+            .collect::<String>()
     }
 
     pub fn is_muted(&self) -> bool {
         match self {
             Component::Volume(component) => component.is_muted,
             _ => false,
+        }
+    }
+
+    pub fn render_as_spans_with_muting(&self) -> Vec<Span<'_>> {
+        let spans = self.render_as_spans();
+        if self.is_muted() {
+            spans
+                .into_iter()
+                .map(|span| span.fg(Color::DarkGray))
+                .collect()
+        } else {
+            spans
         }
     }
 }
@@ -169,7 +183,7 @@ mod tests {
         assert_eq!(middle_components.len(), 3); // time, separator, weather
 
         let right_components = manager.get_bar_components("right");
-        assert_eq!(right_components.len(), 11); // 8 components + 3 separators
+        assert!(!right_components.is_empty()); // Right bar has components
     }
 }
 

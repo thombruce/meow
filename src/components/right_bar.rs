@@ -32,14 +32,7 @@ impl RightBar {
 
         let spans: Vec<Span> = components
             .iter()
-            .map(|component| {
-                let content = component.render();
-                if component.is_muted() {
-                    Span::raw(content).fg(Color::DarkGray)
-                } else {
-                    Span::raw(content)
-                }
-            })
+            .flat_map(|component| component.render_as_spans_with_muting())
             .collect();
 
         let right_line = Line::from(spans);
