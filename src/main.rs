@@ -8,7 +8,7 @@ use std::time::Duration;
 use tokio::runtime::Runtime;
 
 mod components;
-use components::{LeftBar, MiddleBar, SystemBar};
+use components::{LeftBar, MiddleBar, RightBar};
 
 fn main() -> color_eyre::Result<()> {
     color_eyre::install()?;
@@ -31,7 +31,7 @@ pub struct App {
     running: bool,
     left_bar: LeftBar,
     middle_bar: MiddleBar,
-    system_bar: SystemBar,
+    right_bar: RightBar,
 }
 
 impl App {
@@ -41,7 +41,7 @@ impl App {
             running: true,
             left_bar: LeftBar::new()?,
             middle_bar: MiddleBar::new()?,
-            system_bar: SystemBar::new()?,
+            right_bar: RightBar::new()?,
         })
     }
 
@@ -62,8 +62,8 @@ impl App {
         if let Err(e) = self.middle_bar.update() {
             eprintln!("Error updating middle bar: {}", e);
         }
-        if let Err(e) = self.system_bar.update() {
-            eprintln!("Error updating system bar: {}", e);
+        if let Err(e) = self.right_bar.update() {
+            eprintln!("Error updating right bar: {}", e);
         }
     }
 
@@ -80,7 +80,7 @@ impl App {
 
         self.left_bar.render(frame, layout[0]);
         self.middle_bar.render(frame, layout[1]);
-        self.system_bar.render(frame, layout[2]);
+        self.right_bar.render(frame, layout[2]);
     }
 
     /// Reads the crossterm events and updates the state of [`App`].

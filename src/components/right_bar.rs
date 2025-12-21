@@ -8,7 +8,7 @@ use ratatui::{
 };
 
 #[derive(Debug)]
-pub struct SystemBar {
+pub struct RightBar {
     temperature: Temperature,
     cpu: Cpu,
     ram: Ram,
@@ -19,7 +19,7 @@ pub struct SystemBar {
     battery: Battery,
 }
 
-impl SystemBar {
+impl RightBar {
     pub fn new() -> color_eyre::Result<Self> {
         Ok(Self {
             temperature: Temperature::new(),
@@ -91,10 +91,10 @@ impl SystemBar {
             Span::raw(self.battery.percentage.clone() + "%"),
         ];
 
-        let system_line = Line::from(spans);
+        let right_line = Line::from(spans);
 
         frame.render_widget(
-            Paragraph::new(system_line).right_aligned().fg(Color::White),
+            Paragraph::new(right_line).right_aligned().fg(Color::White),
             area,
         );
     }
