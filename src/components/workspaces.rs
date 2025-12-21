@@ -26,8 +26,7 @@ impl Workspaces {
         self.active_workspace = get_active_workspace().unwrap_or_default();
     }
 
-    // TODO: Fix mismatched_lifetime_syntaxes
-    pub fn workspace_spans(&self) -> Vec<Span> {
+    pub fn workspace_spans(&self) -> Vec<Span<'_>> {
         return self
             .workspaces
             .iter()
