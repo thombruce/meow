@@ -7,7 +7,10 @@ use ratatui::{
 use std::time::Duration;
 use tokio::runtime::Runtime;
 
+mod component_manager;
 mod components;
+mod config;
+
 use components::{LeftBar, MiddleBar, RightBar};
 
 fn main() -> color_eyre::Result<()> {

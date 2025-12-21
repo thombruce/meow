@@ -36,7 +36,7 @@ fn get_system_volume() -> Option<(i32, bool)> {
     if output.status.success() {
         let stdout = str::from_utf8(&output.stdout).unwrap();
         let is_muted = stdout.contains("[MUTED]");
-        let parts: Vec<&str> = stdout.trim().split_whitespace().collect();
+        let parts: Vec<&str> = stdout.split_whitespace().collect();
 
         if let Ok(volume) = parts[1].parse::<f32>() {
             return Some(((volume * 100.0) as i32, is_muted));

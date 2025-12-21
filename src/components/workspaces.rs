@@ -27,8 +27,7 @@ impl Workspaces {
     }
 
     pub fn render(&self) -> Vec<Span<'_>> {
-        return self
-            .workspaces
+        self.workspaces
             .iter()
             .map(|w| {
                 if w == &self.active_workspace {
@@ -39,7 +38,7 @@ impl Workspaces {
                     Span::raw(format!(" {} ", w))
                 }
             })
-            .collect::<Vec<Span>>();
+            .collect::<Vec<Span>>()
     }
 }
 
