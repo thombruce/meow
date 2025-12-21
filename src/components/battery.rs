@@ -1,5 +1,5 @@
-use std::time::{Duration, Instant};
 use crate::logging;
+use std::time::{Duration, Instant};
 
 #[derive(Debug)]
 pub struct Battery {
@@ -17,7 +17,10 @@ impl Battery {
         let battery = match manager.batteries()?.next() {
             Some(Ok(battery)) => battery,
             Some(Err(e)) => {
-                logging::log_component_error("BATTERY", &format!("Unable to access battery information: {}", e));
+                logging::log_component_error(
+                    "BATTERY",
+                    &format!("Unable to access battery information: {}", e),
+                );
                 return Err(e.into());
             }
             None => {

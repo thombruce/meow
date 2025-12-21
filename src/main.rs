@@ -51,8 +51,6 @@ impl App {
         // Start file watcher
         Self::start_config_watcher(reload_tx)?;
 
-
-
         Ok(Self {
             running: true,
             component_manager,
@@ -88,17 +86,24 @@ impl App {
             ) {
                 Ok(w) => w,
                 Err(e) => {
-                    logging::log_file_watcher_error(&format!("Failed to create file watcher: {}", e));
+                    logging::log_file_watcher_error(&format!(
+                        "Failed to create file watcher: {}",
+                        e
+                    ));
                     return;
                 }
             };
 
             // Watch the config directory
             if let Some(parent) = config_path.parent()
-                && let Err(e) = watcher.watch(parent, RecursiveMode::NonRecursive) {
-                    logging::log_file_watcher_error(&format!("Failed to watch config directory: {}", e));
-                    return;
-                }
+                && let Err(e) = watcher.watch(parent, RecursiveMode::NonRecursive)
+            {
+                logging::log_file_watcher_error(&format!(
+                    "Failed to watch config directory: {}",
+                    e
+                ));
+                return;
+            }
 
             while let Some(event) = rx.recv().await {
                 use notify::EventKind;
@@ -106,11 +111,15 @@ impl App {
                 // Check if the event is related to our config file
                 if let Some(path) = event.paths.first()
                     && path == &config_path
-                        && matches!(event.kind, EventKind::Modify(_) | EventKind::Create(_))
-                            && let Err(e) = reload_tx.send(()).await {
-                                logging::log_file_watcher_error(&format!("Failed to send reload signal: {}", e));
-                                break;
-                            }
+                    && matches!(event.kind, EventKind::Modify(_) | EventKind::Create(_))
+                    && let Err(e) = reload_tx.send(()).await
+                {
+                    logging::log_file_watcher_error(&format!(
+                        "Failed to send reload signal: {}",
+                        e
+                    ));
+                    break;
+                }
             }
         });
 

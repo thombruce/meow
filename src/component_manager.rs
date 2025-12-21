@@ -1,6 +1,6 @@
 use crate::components::{
-    Battery, Brightness, Cpu, ErrorIcon, Ram, Separator, Space, Temperature, Time, Volume, Vpn, Weather, Wifi,
-    Workspaces,
+    Battery, Brightness, Cpu, ErrorIcon, Ram, Separator, Space, Temperature, Time, Volume, Vpn,
+    Weather, Wifi, Workspaces,
 };
 use crate::config::Config;
 use ratatui::{prelude::Stylize, style::Color, text::Span};
@@ -124,8 +124,6 @@ impl Component {
         }
     }
 
-
-
     pub fn is_muted(&self) -> bool {
         match self {
             Component::Volume(component) => component.is_muted,
@@ -145,8 +143,6 @@ impl Component {
         }
     }
 }
-
-
 
 #[derive(Debug)]
 pub struct ComponentManager {

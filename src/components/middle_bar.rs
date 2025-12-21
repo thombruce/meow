@@ -1,4 +1,3 @@
-
 use crate::component_manager::ComponentManager;
 use ratatui::{
     Frame,
@@ -20,7 +19,12 @@ impl MiddleBar {
         Ok(())
     }
 
-    pub fn render(&self, frame: &mut Frame, area: ratatui::layout::Rect, component_manager: &ComponentManager) {
+    pub fn render(
+        &self,
+        frame: &mut Frame,
+        area: ratatui::layout::Rect,
+        component_manager: &ComponentManager,
+    ) {
         let components = component_manager.get_bar_components("middle");
 
         if components.is_empty() {
