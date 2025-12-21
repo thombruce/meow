@@ -1,6 +1,7 @@
 pub mod battery;
 pub mod brightness;
 pub mod cpu;
+pub mod error_icon;
 pub mod left_bar;
 pub mod middle_bar;
 pub mod ram;
@@ -18,6 +19,7 @@ pub mod workspaces;
 pub use battery::Battery;
 pub use brightness::Brightness;
 pub use cpu::Cpu;
+pub use error_icon::ErrorIcon;
 pub use left_bar::LeftBar;
 pub use middle_bar::MiddleBar;
 pub use ram::Ram;

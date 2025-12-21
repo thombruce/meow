@@ -1,5 +1,5 @@
 use crate::components::{
-    Battery, Brightness, Cpu, Ram, Separator, Space, Temperature, Time, Volume, Vpn, Weather, Wifi,
+    Battery, Brightness, Cpu, ErrorIcon, Ram, Separator, Space, Temperature, Time, Volume, Vpn, Weather, Wifi,
     Workspaces,
 };
 use crate::config::Config;
@@ -21,6 +21,7 @@ pub enum Component {
     Battery(Battery),
     Separator(Separator),
     Space(Space),
+    ErrorIcon(ErrorIcon),
 }
 
 impl Component {
@@ -39,10 +40,7 @@ impl Component {
             "battery" => Ok(Component::Battery(Battery::new()?)),
             "separator" => Ok(Component::Separator(Separator::new())),
             "space" => Ok(Component::Space(Space::new())),
-            _ => Err(color_eyre::eyre::eyre!(
-                "Unknown component type: {}",
-                component_type
-            )),
+            _ => Ok(Component::ErrorIcon(ErrorIcon::new())),
         }
     }
 
@@ -100,6 +98,10 @@ impl Component {
                 // Space doesn't need updates
                 Ok(())
             }
+            Component::ErrorIcon(_component) => {
+                // ErrorIcon doesn't need updates
+                Ok(())
+            }
         }
     }
 
@@ -118,6 +120,7 @@ impl Component {
             Component::Battery(component) => vec![Span::raw(component.render())],
             Component::Separator(component) => vec![Span::raw(component.render())],
             Component::Space(component) => vec![Span::raw(component.render())],
+            Component::ErrorIcon(component) => component.render_as_spans(),
         }
     }
 
@@ -155,47 +158,23 @@ impl ComponentManager {
     pub fn new() -> color_eyre::Result<Self> {
         let config = Config::load()?;
         let mut components = HashMap::new();
-        let mut unknown_components = Vec::new();
 
-        // Collect all component names for validation
-        let all_component_names: Vec<&String> = config.bars.left
-            .iter()
-            .chain(config.bars.middle.iter())
-            .chain(config.bars.right.iter())
-            .collect();
-
-        // Validate component names first
-        for component_name in &all_component_names {
-            if Component::new(component_name).is_err() {
-                unknown_components.push((*component_name).clone());
-            }
-        }
-
-        // Warn about unknown components
-        if !unknown_components.is_empty() {
-            eprintln!("Warning: Unknown components found in configuration: {:?}", unknown_components);
-            eprintln!("Available components: workspaces, time, weather, temperature, cpu, ram, wifi, vpn, brightness, volume, battery, separator, space");
-        }
-
-        // Create valid components
+        // Create all components (unknown ones become error icons)
         for component_name in &config.bars.left {
-            if let Ok(component) = Component::new(component_name) {
-                components.insert(component_name.clone(), component);
-            }
+            let component = Component::new(component_name)?;
+            components.insert(component_name.clone(), component);
         }
 
         for component_name in &config.bars.middle {
-            if !components.contains_key(component_name)
-                && let Ok(component) = Component::new(component_name)
-            {
+            if !components.contains_key(component_name) {
+                let component = Component::new(component_name)?;
                 components.insert(component_name.clone(), component);
             }
         }
 
         for component_name in &config.bars.right {
-            if !components.contains_key(component_name)
-                && let Ok(component) = Component::new(component_name)
-            {
+            if !components.contains_key(component_name) {
+                let component = Component::new(component_name)?;
                 components.insert(component_name.clone(), component);
             }
         }
@@ -224,47 +203,23 @@ impl ComponentManager {
     pub fn reload(&mut self) -> color_eyre::Result<()> {
         let new_config = self.config.reload()?;
         let mut components = HashMap::new();
-        let mut unknown_components = Vec::new();
 
-        // Collect all component names for validation
-        let all_component_names: Vec<&String> = new_config.bars.left
-            .iter()
-            .chain(new_config.bars.middle.iter())
-            .chain(new_config.bars.right.iter())
-            .collect();
-
-        // Validate component names first
-        for component_name in &all_component_names {
-            if Component::new(component_name).is_err() {
-                unknown_components.push((*component_name).clone());
-            }
-        }
-
-        // Warn about unknown components
-        if !unknown_components.is_empty() {
-            eprintln!("Warning: Unknown components found in configuration: {:?}", unknown_components);
-            eprintln!("Available components: workspaces, time, weather, temperature, cpu, ram, wifi, vpn, brightness, volume, battery, separator, space");
-        }
-
-        // Create valid components
+        // Create all components (unknown ones become error icons)
         for component_name in &new_config.bars.left {
-            if let Ok(component) = Component::new(component_name) {
-                components.insert(component_name.clone(), component);
-            }
+            let component = Component::new(component_name)?;
+            components.insert(component_name.clone(), component);
         }
 
         for component_name in &new_config.bars.middle {
-            if !components.contains_key(component_name)
-                && let Ok(component) = Component::new(component_name)
-            {
+            if !components.contains_key(component_name) {
+                let component = Component::new(component_name)?;
                 components.insert(component_name.clone(), component);
             }
         }
 
         for component_name in &new_config.bars.right {
-            if !components.contains_key(component_name)
-                && let Ok(component) = Component::new(component_name)
-            {
+            if !components.contains_key(component_name) {
+                let component = Component::new(component_name)?;
                 components.insert(component_name.clone(), component);
             }
         }

@@ -46,12 +46,14 @@ impl App {
     pub fn new() -> color_eyre::Result<Self> {
         let component_manager = ComponentManager::new()?;
         let (reload_tx, reload_rx) = mpsc::channel(10);
-        
+
         // Start file watcher
         Self::start_config_watcher(reload_tx)?;
-        
-        println!("Configuration hot-reload enabled. Edit ~/.config/catfoodBar/config.json to see changes live!");
-        
+
+        println!(
+            "Configuration hot-reload enabled. Edit ~/.config/catfoodBar/config.json to see changes live!"
+        );
+
         Ok(Self {
             running: true,
             component_manager,
@@ -64,17 +66,18 @@ impl App {
 
     /// Start the configuration file watcher
     fn start_config_watcher(reload_tx: mpsc::Sender<()>) -> color_eyre::Result<()> {
-        let config_path = std::path::PathBuf::from(std::env::var("HOME").unwrap_or_else(|_| ".".to_string()))
-            .join(".config")
-            .join("catfoodBar")
-            .join("config.json");
-        
+        let config_path =
+            std::path::PathBuf::from(std::env::var("HOME").unwrap_or_else(|_| ".".to_string()))
+                .join(".config")
+                .join("catfoodBar")
+                .join("config.json");
+
         tokio::spawn(async move {
-            use notify::{Watcher, RecursiveMode, RecommendedWatcher, Config as NotifyConfig};
+            use notify::{Config as NotifyConfig, RecommendedWatcher, RecursiveMode, Watcher};
             use std::time::Duration;
-            
+
             let (tx, mut rx) = tokio::sync::mpsc::channel(10);
-            
+
             // Create watcher with proper error handling
             let mut watcher = match RecommendedWatcher::new(
                 move |res| {
@@ -90,7 +93,7 @@ impl App {
                     return;
                 }
             };
-            
+
             // Watch the config directory
             if let Some(parent) = config_path.parent() {
                 if let Err(e) = watcher.watch(parent, RecursiveMode::NonRecursive) {
@@ -98,10 +101,10 @@ impl App {
                     return;
                 }
             }
-            
+
             while let Some(event) = rx.recv().await {
                 use notify::EventKind;
-                
+
                 // Check if the event is related to our config file
                 if let Some(path) = event.paths.first() {
                     if path == &config_path {
@@ -116,7 +119,7 @@ impl App {
                 }
             }
         });
-        
+
         Ok(())
     }
 
@@ -169,9 +172,12 @@ impl App {
             ])
             .split(frame.area());
 
-        self.left_bar.render(frame, layout[0], &self.component_manager);
-        self.middle_bar.render(frame, layout[1], &self.component_manager);
-        self.right_bar.render(frame, layout[2], &self.component_manager);
+        self.left_bar
+            .render(frame, layout[0], &self.component_manager);
+        self.middle_bar
+            .render(frame, layout[1], &self.component_manager);
+        self.right_bar
+            .render(frame, layout[2], &self.component_manager);
     }
 
     /// Reads the crossterm events and updates the state of [`App`].
