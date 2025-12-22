@@ -204,6 +204,7 @@ version = "0.1.0"
 dependencies = [
  "battery",
  "chrono",
+ "clap",
  "color-eyre",
  "crossterm 0.29.0",
  "lazy_static",
