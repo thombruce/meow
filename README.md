@@ -28,6 +28,16 @@ catfood notifications # Run notification system (coming soon)
 
 ## Installation
 
+### From crates.io
+
+```sh
+# Install the complete catfood suite
+cargo install catfood
+
+# Install just the bar component
+cargo install catfood-bar
+```
+
 ### From Source
 
 ```sh
@@ -35,7 +45,7 @@ catfood notifications # Run notification system (coming soon)
 cargo install --path .
 
 # Or build and run locally
-cargo run -- bar
+cargo run --release -- bar
 ```
 
 ## Configuration
@@ -58,6 +68,46 @@ All errors are logged to `~/.local/share/catfood/logs/bar.log` in ISO format:
 The log file keeps only the last 1000 lines.
 
 See [CONFIG_EXAMPLE.md](CONFIG_EXAMPLE.md) for detailed configuration options and examples.
+
+## Release Process
+
+This project uses automated releases triggered by git tags:
+
+### Making a Release
+
+1. **Update Version** (using conventional commits):
+   ```bash
+   # Bump version and update workspace
+   cargo release patch  # or minor/major
+   ```
+
+2. **Create Tag**:
+   ```bash
+   # Tag the release (must be on main branch)
+   git tag v0.1.1
+   git push --tags
+   ```
+
+3. **Automatic Release**:
+   - GitHub Actions builds and tests on all platforms
+   - Binaries are compiled for Linux, macOS, and Windows
+   - Workspace is published to crates.io concurrently
+   - GitHub Release is created with binaries and changelog
+
+### Development Workflow
+
+Use conventional commit messages for automatic changelog generation:
+
+- `feat: add new weather component` → New features
+- `fix: memory leak in CPU monitoring` → Bug fixes  
+- `docs: update configuration examples` → Documentation
+- `refactor: improve component performance` → Code improvements
+
+### Release Types
+
+- **Patch (0.1.1)**: Bug fixes, documentation updates
+- **Minor (0.2.0)**: New features, significant enhancements
+- **Major (1.0.0)**: Breaking changes, API changes
 
 ## License
 
