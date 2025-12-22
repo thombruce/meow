@@ -178,7 +178,7 @@ impl ComponentManager {
         let config_dir =
             std::path::PathBuf::from(std::env::var("HOME").unwrap_or_else(|_| ".".to_string()))
                 .join(".config")
-                .join("catfood_bar")
+                .join("catfood")
                 .join("components");
         lua_registry.load_from_directory(config_dir.to_str().unwrap())?;
 
@@ -242,7 +242,7 @@ impl ComponentManager {
         let config_dir =
             std::path::PathBuf::from(std::env::var("HOME").unwrap_or_else(|_| ".".to_string()))
                 .join(".config")
-                .join("catfood_bar")
+                .join("catfood")
                 .join("components");
         self.lua_registry = LuaComponentRegistry::new();
         self.lua_registry

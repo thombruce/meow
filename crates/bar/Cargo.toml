@@ -1,10 +1,12 @@
 [package]
 name = "catfood-bar"
-version = "0.1.0"
+version.workspace = true
 description = "A system bar component of the catfood utility suite"
-authors = ["Thom Bruce <thom@thombruce.com>"]
-license = "MIT"
-edition = "2024"
+authors.workspace = true
+license.workspace = true
+edition.workspace = true
+repository.workspace = true
+homepage.workspace = true
 
 [dependencies]
 crossterm = "0.29.0"
