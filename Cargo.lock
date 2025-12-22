@@ -196,6 +196,8 @@ version = "0.1.0"
 dependencies = [
  "catfood-bar",
  "clap",
+ "color-eyre",
+ "libc",
 ]
 
 [[package]]
