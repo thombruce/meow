@@ -3,7 +3,7 @@
 This configuration file allows you to customize which components appear in each bar section.
 
 ## Location
-`~/.config/catfood_bar/config.json`
+`~/.config/catfood/bar.json`
 
 ## Available Components
 - `workspaces` - Hyprland workspaces
@@ -131,4 +131,4 @@ The configuration system provides two spacing components:
 
 You can use multiple `space` components in a row for larger gaps, or combine `space` and `separator` for custom layouts. For example, `["space", "separator", "space"]` would create " | " with extra spacing around the separator.
 
-The first time you run catfood_bar, it will create a default configuration file at `~/.config/catfood_bar/config.json`. You can then edit this file to customize your bar layout.
+The first time you run catfood_bar, it will create a default configuration file at `~/.config/catfood/bar.json`. You can then edit this file to customize your bar layout.
