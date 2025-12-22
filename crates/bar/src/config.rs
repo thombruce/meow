@@ -75,8 +75,8 @@ impl Config {
         let home_dir = std::env::var("HOME").unwrap_or_else(|_| ".".to_string());
         std::path::PathBuf::from(home_dir)
             .join(".config")
-            .join("catfood_bar")
-            .join("config.json")
+            .join("catfood")
+            .join("bar.json")
     }
 
     pub fn get_components_for_bar(&self, bar: &str) -> Option<&Vec<String>> {

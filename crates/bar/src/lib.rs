@@ -17,7 +17,7 @@ mod lua_component;
 use component_manager::ComponentManager;
 use components::{LeftBar, MiddleBar, RightBar};
 
-fn main() -> color_eyre::Result<()> {
+pub fn run() -> color_eyre::Result<()> {
     color_eyre::install()?;
 
     // Initialize Tokio runtime
@@ -67,8 +67,8 @@ impl App {
         let config_path =
             std::path::PathBuf::from(std::env::var("HOME").unwrap_or_else(|_| ".".to_string()))
                 .join(".config")
-                .join("catfood_bar")
-                .join("config.json");
+                .join("catfood")
+                .join("bar.json");
 
         tokio::spawn(async move {
             use notify::{Config as NotifyConfig, RecommendedWatcher, RecursiveMode, Watcher};

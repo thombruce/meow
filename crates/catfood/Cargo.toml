@@ -1,0 +1,11 @@
+[package]
+name = "catfood"
+version = "0.1.0"
+description = "A utility suite for system management"
+authors = ["Thom Bruce <thom@thombruce.com>"]
+license = "MIT"
+edition = "2024"
+
+[dependencies]
+clap = { version = "4.0", features = ["derive"] }
+catfood-bar = { path = "../bar" }
