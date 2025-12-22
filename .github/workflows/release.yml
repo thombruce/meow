@@ -9,6 +9,8 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
+  OPENSSL_DIR: /usr
+  OPENSSL_NO_VENDOR: true
 
 permissions:
   contents: write
