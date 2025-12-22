@@ -4,6 +4,9 @@ use ratatui::{
     layout::{Direction, Layout},
     prelude::Constraint,
 };
+use std::fs;
+use std::io::Write;
+use std::path::PathBuf;
 use std::time::Duration;
 use tokio::runtime::Runtime;
 use tokio::sync::mpsc;
@@ -17,18 +20,29 @@ mod lua_component;
 use component_manager::ComponentManager;
 use components::{LeftBar, MiddleBar, RightBar};
 
-fn main() -> color_eyre::Result<()> {
+pub fn run() -> color_eyre::Result<()> {
     color_eyre::install()?;
+
+    // Create PID file at bar startup (not in parent)
+    if let Err(e) = create_pid_file() {
+        eprintln!("Failed to create PID file: {}", e);
+        return Err(e);
+    }
 
     // Initialize Tokio runtime
     let rt = Runtime::new()?;
 
-    rt.block_on(async {
+    let result = rt.block_on(async {
         let terminal = ratatui::init();
-        let result = App::new()?.run_async(terminal).await;
+        let app_result = App::new()?.run_async(terminal).await;
         ratatui::restore();
-        result
-    })
+        app_result
+    });
+
+    // Clean up PID file on exit
+    let _ = remove_pid_file();
+
+    result
 }
 
 /// The main application which holds the state and logic of the application.
@@ -67,8 +81,8 @@ impl App {
         let config_path =
             std::path::PathBuf::from(std::env::var("HOME").unwrap_or_else(|_| ".".to_string()))
                 .join(".config")
-                .join("catfood_bar")
-                .join("config.json");
+                .join("catfood")
+                .join("bar.json");
 
         tokio::spawn(async move {
             use notify::{Config as NotifyConfig, RecommendedWatcher, RecursiveMode, Watcher};
@@ -208,4 +222,39 @@ impl App {
     fn quit(&mut self) {
         self.running = false;
     }
+}
+
+/// Get the PID file path (same as in catfood crate)
+fn get_pid_file_path() -> color_eyre::Result<PathBuf> {
+    let data_dir = std::env::var("XDG_DATA_HOME").unwrap_or_else(|_| {
+        let home = std::env::var("HOME").unwrap_or_else(|_| ".".to_string());
+        format!("{}/.local/share", home)
+    });
+
+    let catfood_dir = PathBuf::from(data_dir).join("catfood");
+    fs::create_dir_all(&catfood_dir)?;
+
+    Ok(catfood_dir.join("bar.pid"))
+}
+
+/// Remove PID file
+fn remove_pid_file() -> color_eyre::Result<()> {
+    let pid_file_path = get_pid_file_path()?;
+
+    if pid_file_path.exists() {
+        fs::remove_file(&pid_file_path)?;
+    }
+
+    Ok(())
+}
+
+/// Create PID file with current process ID
+fn create_pid_file() -> color_eyre::Result<()> {
+    let pid_file_path = get_pid_file_path()?;
+    let pid = std::process::id();
+
+    let mut file = fs::File::create(&pid_file_path)?;
+    writeln!(file, "{}", pid)?;
+
+    Ok(())
 }
