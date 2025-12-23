@@ -24,32 +24,64 @@ pub trait ConfigurableComponent {
     fn from_config(config: Self::Config) -> color_eyre::Result<Self>
     where
         Self: Sized;
-
-    fn component_name() -> &'static str;
 }
 
-#[macro_export]
-macro_rules! try_all_configurable_components {
-    ($value:expr, $($component_type:ty => $enum_variant:ident),*) => {
-        $(
-            if <$component_type>::component_name() == extract_component_name($value) {
-                if let Ok(config) = serde_json::from_value::<<$component_type as ConfigurableComponent>::Config>($value.clone()) {
-                    if let Ok(component) = <$component_type>::from_config(config) {
-                        return Some(Ok(Component::$enum_variant(component)));
-                    }
-                }
-            }
-        )*
-    };
+type ComponentFactory = std::boxed::Box<
+    dyn Fn(&serde_json::Value) -> Option<color_eyre::Result<crate::component_manager::Component>>,
+>;
+
+pub struct ConfigurableComponentRegistry {
+    factories: std::collections::HashMap<String, ComponentFactory>,
 }
 
-pub fn extract_component_name(value: &serde_json::Value) -> String {
-    if let Some(obj) = value.as_object()
-        && let Some(component) = obj.get("component").and_then(|c| c.as_str())
-    {
-        return component.to_string();
+impl ConfigurableComponentRegistry {
+    pub fn new() -> Self {
+        let mut registry = Self {
+            factories: std::collections::HashMap::new(),
+        };
+
+        // Auto-register all built-in configurable components
+        registry.register_wifi();
+
+        registry
     }
-    "unknown".to_string()
+
+    pub fn register_wifi(&mut self) {
+        let factory: ComponentFactory = std::boxed::Box::new(|value: &serde_json::Value| {
+            if let Ok(config) =
+                serde_json::from_value::<<Wifi as ConfigurableComponent>::Config>(value.clone())
+                && let Ok(wifi) = Wifi::from_config(config)
+            {
+                return Some(Ok(crate::component_manager::Component::Wifi(wifi)));
+            }
+            None
+        });
+        self.factories.insert("wifi".to_string(), factory);
+    }
+
+    // Future: Add generic register method for plugin support
+    // This would allow runtime registration of new configurable components
+
+    pub fn try_create(
+        &self,
+        component_name: &str,
+        value: &serde_json::Value,
+    ) -> Option<color_eyre::Result<crate::component_manager::Component>> {
+        if let Some(factory) = self.factories.get(component_name) {
+            factory(value)
+        } else {
+            None
+        }
+    }
+
+    pub fn extract_component_name(value: &serde_json::Value) -> String {
+        if let Some(obj) = value.as_object()
+            && let Some(component) = obj.get("component").and_then(|c| c.as_str())
+        {
+            return component.to_string();
+        }
+        "unknown".to_string()
+    }
 }
 
 pub use battery::Battery;

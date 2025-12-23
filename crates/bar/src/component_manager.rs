@@ -1,6 +1,6 @@
 use crate::components::{
-    Battery, Brightness, ConfigurableComponent, Cpu, ErrorIcon, Ram, Separator, Space, Temperature,
-    Time, Volume, Weather, Wifi, Windows, Workspaces, extract_component_name,
+    Battery, Brightness, ConfigurableComponentRegistry, Cpu, ErrorIcon, Ram, Separator, Space,
+    Temperature, Time, Volume, Weather, Wifi, Windows, Workspaces,
 };
 use crate::config::{ComponentConfig, Config};
 use crate::lua_component::{LuaComponent, LuaComponentRegistry};
@@ -8,17 +8,11 @@ use ratatui::{prelude::Stylize, text::Span};
 use std::collections::HashMap;
 
 fn create_from_config(
-    _component_name: &str,
     value: &serde_json::Value,
+    registry: &ConfigurableComponentRegistry,
 ) -> Option<color_eyre::Result<Component>> {
-    // Try all configurable components - this will automatically try any component that implements the trait
-    crate::try_all_configurable_components! {
-        value,
-        Wifi => Wifi
-        // Future components can be added here without changing the function
-    };
-
-    None
+    let component_name = ConfigurableComponentRegistry::extract_component_name(value);
+    registry.try_create(&component_name, value)
 }
 
 fn get_component_name(config: &ComponentConfig) -> String {
@@ -61,26 +55,21 @@ impl Component {
         component_config: &ComponentConfig,
         lua_registry: Option<&LuaComponentRegistry>,
     ) -> color_eyre::Result<Self> {
+        // Create registry for configurable components
+        let registry = ConfigurableComponentRegistry::new();
+
         match component_config {
             ComponentConfig::Simple(name) => Self::create_simple(name, lua_registry),
             ComponentConfig::Detailed(value) => {
-                // Extract component name from JSON
-                let component_name = if let Some(obj) = value.as_object()
-                    && let Some(component) = obj.get("component").and_then(|c| c.as_str())
-                {
-                    component
-                } else {
-                    "unknown"
-                };
-
-                // Try to create from configuration
-                if let Some(result) = create_from_config(component_name, value) {
+                // Try to create from configuration using registry
+                if let Some(result) = create_from_config(value, &registry) {
                     return result;
                 }
 
                 // Fallback: try as simple component
+                let component_name = ConfigurableComponentRegistry::extract_component_name(value);
                 if component_name != "unknown" {
-                    return Self::create_simple(component_name, lua_registry);
+                    return Self::create_simple(&component_name, lua_registry);
                 }
 
                 Ok(Component::ErrorIcon(ErrorIcon::new()))

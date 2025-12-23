@@ -33,10 +33,6 @@ impl ConfigurableComponent for Wifi {
         }
         Ok(wifi)
     }
-
-    fn component_name() -> &'static str {
-        "wifi"
-    }
 }
 
 #[derive(Debug)]
