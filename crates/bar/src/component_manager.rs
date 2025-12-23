@@ -32,8 +32,8 @@ impl Component {
         lua_registry: Option<&LuaComponentRegistry>,
     ) -> color_eyre::Result<Self> {
         match component_type {
-            "workspaces" => Ok(Component::Workspaces(Workspaces::new())),
-            "windows" => Ok(Component::Windows(Windows::new())),
+            "workspaces" => Ok(Component::Workspaces(Workspaces::new()?)),
+            "windows" => Ok(Component::Windows(Windows::new()?)),
             "time" => Ok(Component::Time(Time::new())),
             "weather" => Ok(Component::Weather(Weather::new())),
             "temperature" => Ok(Component::Temperature(Temperature::new())),
@@ -59,14 +59,8 @@ impl Component {
 
     pub fn update(&mut self) -> color_eyre::Result<()> {
         match self {
-            Component::Workspaces(component) => {
-                component.update();
-                Ok(())
-            }
-            Component::Windows(component) => {
-                component.update();
-                Ok(())
-            }
+            Component::Workspaces(component) => component.update(),
+            Component::Windows(component) => component.update(),
             Component::Time(component) => {
                 component.update();
                 Ok(())

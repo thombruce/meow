@@ -1,54 +1,64 @@
+use crate::wayland_client::WaylandManager;
 use ratatui::{prelude::Stylize, style::Color, text::Span};
-use serde::Deserialize;
-use std::process::Command;
-
-use crate::logging;
-
-#[derive(Deserialize, Debug)]
-struct Window {
-    address: String,
-    class: String,
-    title: String,
-    workspace: Workspace,
-}
-
-#[derive(Deserialize, Debug)]
-struct ActiveWindow {
-    address: String,
-}
-
-#[derive(Deserialize, Debug)]
-struct Workspace {
-    id: i32,
-}
 
 #[derive(Debug, Clone)]
-pub struct WindowInfo {
+pub struct WindowInfoInternal {
     address: String,
     icon: String,
     class: String,
     title: String,
 }
 
-#[derive(Debug, Default, Clone)]
+#[derive(Clone)]
 pub struct Windows {
-    pub windows: Vec<WindowInfo>,
+    wayland_manager: WaylandManager,
+    pub windows: Vec<WindowInfoInternal>,
     active_window: String,
 }
 
+impl std::fmt::Debug for Windows {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Windows")
+            .field("windows", &self.windows)
+            .field("active_window", &self.active_window)
+            .finish()
+    }
+}
+
 impl Windows {
-    pub fn new() -> Self {
-        let (windows, active_window) = get_windows().unwrap_or_default();
-        Self {
-            windows,
-            active_window,
-        }
+    pub fn new() -> color_eyre::Result<Self> {
+        let wayland_manager = WaylandManager::new()?;
+        let mut instance = Self {
+            wayland_manager,
+            windows: Vec::new(),
+            active_window: String::new(),
+        };
+        instance.update()?;
+        Ok(instance)
     }
 
-    pub fn update(&mut self) {
-        let (windows, active_window) = get_windows().unwrap_or_default();
-        self.windows = windows;
-        self.active_window = active_window;
+    pub fn update(&mut self) -> color_eyre::Result<()> {
+        let window_infos = self.wayland_manager.get_windows().unwrap_or_default();
+
+        // Get active window
+        self.active_window = self
+            .wayland_manager
+            .get_active_window()
+            .unwrap_or_default()
+            .unwrap_or_default();
+
+        // Convert WindowInfo to WindowInfoInternal with icons
+        self.windows = window_infos
+            .into_iter()
+            .map(|w| WindowInfoInternal {
+                address: w.id,
+                icon: get_app_icon(&w.class, &w.title),
+                class: w.class,
+                title: w.title,
+            })
+            .collect();
+
+        Ok(())
     }
 
     pub fn render(&self) -> Vec<Span<'_>> {
@@ -66,56 +76,6 @@ impl Windows {
             })
             .collect::<Vec<Span>>()
     }
-}
-
-fn get_windows() -> Option<(Vec<WindowInfo>, String)> {
-    // Get all windows
-    let clients_output = Command::new("hyprctl")
-        .args(["clients", "-j"])
-        .output()
-        .expect("failed to get clients");
-
-    if !clients_output.status.success() {
-        logging::log_component_error(
-            "WINDOWS",
-            str::from_utf8(&clients_output.stderr).unwrap_or("unknown error"),
-        );
-        return None;
-    }
-
-    let clients_stdout = str::from_utf8(&clients_output.stdout).unwrap();
-    let windows: Vec<Window> =
-        serde_json::from_str(clients_stdout).expect("failed to parse windows");
-
-    // Get active window
-    let active_output = Command::new("hyprctl")
-        .args(["activewindow", "-j"])
-        .output()
-        .expect("failed to get active window");
-
-    let active_address = if active_output.status.success() {
-        let active_stdout = str::from_utf8(&active_output.stdout).unwrap();
-        let active_window: ActiveWindow =
-            serde_json::from_str(active_stdout).unwrap_or(ActiveWindow {
-                address: String::new(),
-            });
-        active_window.address
-    } else {
-        String::new()
-    };
-
-    let window_infos = windows
-        .iter()
-        .filter(|w| w.workspace.id > 0) // Filter out special workspaces
-        .map(|w| WindowInfo {
-            address: w.address.clone(),
-            icon: get_app_icon(&w.class, &w.title),
-            class: w.class.clone(),
-            title: w.title.clone(),
-        })
-        .collect();
-
-    Some((window_infos, active_address))
 }
 
 fn get_app_icon(class: &str, title: &str) -> String {

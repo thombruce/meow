@@ -16,6 +16,7 @@ mod components;
 mod config;
 mod logging;
 mod lua_component;
+mod wayland_client;
 
 use component_manager::ComponentManager;
 use components::{LeftBar, MiddleBar, RightBar};

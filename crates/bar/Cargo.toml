@@ -24,3 +24,7 @@ notify = "6.1"
 lazy_static = "1.4"
 mlua = { version = "0.10", features = ["lua54", "vendored"] }
 clap = { version = "4.0", features = ["derive"] }
+wayland-client = "0.31"
+wayland-protocols = { version = "0.32", features = ["client", "unstable"] }
+wayland-protocols-wlr = { version = "0.3", features = ["client"] }
+smithay-client-toolkit = "0.19"
