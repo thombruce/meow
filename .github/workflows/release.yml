@@ -153,8 +153,8 @@ jobs:
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CRATES_IO_TOKEN }}
 
-      - name: Push changelog
-        run: git push
+      # - name: Push changelog
+      #   run: git push
 
       - name: Download all artifacts
         uses: actions/download-artifact@v4
