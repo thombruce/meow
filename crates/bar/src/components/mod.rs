@@ -1,3 +1,5 @@
+use serde::de::DeserializeOwned;
+
 pub mod battery;
 pub mod brightness;
 pub mod cpu;
@@ -15,6 +17,40 @@ pub mod weather;
 pub mod wifi;
 pub mod windows;
 pub mod workspaces;
+
+pub trait ConfigurableComponent {
+    type Config: DeserializeOwned;
+
+    fn from_config(config: Self::Config) -> color_eyre::Result<Self>
+    where
+        Self: Sized;
+
+    fn component_name() -> &'static str;
+}
+
+#[macro_export]
+macro_rules! try_all_configurable_components {
+    ($value:expr, $($component_type:ty => $enum_variant:ident),*) => {
+        $(
+            if <$component_type>::component_name() == extract_component_name($value) {
+                if let Ok(config) = serde_json::from_value::<<$component_type as ConfigurableComponent>::Config>($value.clone()) {
+                    if let Ok(component) = <$component_type>::from_config(config) {
+                        return Some(Ok(Component::$enum_variant(component)));
+                    }
+                }
+            }
+        )*
+    };
+}
+
+pub fn extract_component_name(value: &serde_json::Value) -> String {
+    if let Some(obj) = value.as_object()
+        && let Some(component) = obj.get("component").and_then(|c| c.as_str())
+    {
+        return component.to_string();
+    }
+    "unknown".to_string()
+}
 
 pub use battery::Battery;
 pub use brightness::Brightness;

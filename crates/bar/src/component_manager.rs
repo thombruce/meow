@@ -1,11 +1,41 @@
 use crate::components::{
-    Battery, Brightness, Cpu, ErrorIcon, Ram, Separator, Space, Temperature, Time, Volume, Weather,
-    Wifi, Windows, Workspaces,
+    Battery, Brightness, ConfigurableComponent, Cpu, ErrorIcon, Ram, Separator, Space, Temperature,
+    Time, Volume, Weather, Wifi, Windows, Workspaces, extract_component_name,
 };
-use crate::config::Config;
+use crate::config::{ComponentConfig, Config};
 use crate::lua_component::{LuaComponent, LuaComponentRegistry};
 use ratatui::{prelude::Stylize, text::Span};
 use std::collections::HashMap;
+
+fn create_from_config(
+    _component_name: &str,
+    value: &serde_json::Value,
+) -> Option<color_eyre::Result<Component>> {
+    // Try all configurable components - this will automatically try any component that implements the trait
+    crate::try_all_configurable_components! {
+        value,
+        Wifi => Wifi
+        // Future components can be added here without changing the function
+    };
+
+    None
+}
+
+fn get_component_name(config: &ComponentConfig) -> String {
+    match config {
+        ComponentConfig::Simple(name) => name.clone(),
+        ComponentConfig::Detailed(value) => {
+            // Extract component name from JSON
+            if let Some(obj) = value.as_object()
+                && let Some(component) = obj.get("component").and_then(|c| c.as_str())
+            {
+                return component.to_string();
+            }
+
+            "unknown".to_string()
+        }
+    }
+}
 
 #[derive(Debug)]
 pub enum Component {
@@ -28,10 +58,41 @@ pub enum Component {
 
 impl Component {
     pub fn new(
-        component_type: &str,
+        component_config: &ComponentConfig,
         lua_registry: Option<&LuaComponentRegistry>,
     ) -> color_eyre::Result<Self> {
-        match component_type {
+        match component_config {
+            ComponentConfig::Simple(name) => Self::create_simple(name, lua_registry),
+            ComponentConfig::Detailed(value) => {
+                // Extract component name from JSON
+                let component_name = if let Some(obj) = value.as_object()
+                    && let Some(component) = obj.get("component").and_then(|c| c.as_str())
+                {
+                    component
+                } else {
+                    "unknown"
+                };
+
+                // Try to create from configuration
+                if let Some(result) = create_from_config(component_name, value) {
+                    return result;
+                }
+
+                // Fallback: try as simple component
+                if component_name != "unknown" {
+                    return Self::create_simple(component_name, lua_registry);
+                }
+
+                Ok(Component::ErrorIcon(ErrorIcon::new()))
+            }
+        }
+    }
+
+    fn create_simple(
+        name: &str,
+        lua_registry: Option<&LuaComponentRegistry>,
+    ) -> color_eyre::Result<Self> {
+        match name {
             "workspaces" => Ok(Component::Workspaces(Workspaces::new())),
             "windows" => Ok(Component::Windows(Windows::new())),
             "time" => Ok(Component::Time(Time::new())),
@@ -48,7 +109,7 @@ impl Component {
             _ => {
                 // Try to load as Lua component
                 if let Some(registry) = lua_registry
-                    && let Some(lua_component) = registry.get_component(component_type)
+                    && let Some(lua_component) = registry.get_component(name)
                 {
                     return Ok(Component::Lua(lua_component.clone()));
                 }
@@ -185,22 +246,25 @@ impl ComponentManager {
         let mut components = HashMap::new();
 
         // Create all components (unknown ones become error icons)
-        for component_name in &config.bars.left {
-            let component = Component::new(component_name, Some(&lua_registry))?;
-            components.insert(component_name.clone(), component);
+        for component_config in &config.bars.left {
+            let component_name = get_component_name(component_config);
+            let component = Component::new(component_config, Some(&lua_registry))?;
+            components.insert(component_name, component);
         }
 
-        for component_name in &config.bars.middle {
-            if !components.contains_key(component_name) {
-                let component = Component::new(component_name, Some(&lua_registry))?;
-                components.insert(component_name.clone(), component);
+        for component_config in &config.bars.middle {
+            let component_name = get_component_name(component_config);
+            if let std::collections::hash_map::Entry::Vacant(e) = components.entry(component_name) {
+                let component = Component::new(component_config, Some(&lua_registry))?;
+                e.insert(component);
             }
         }
 
-        for component_name in &config.bars.right {
-            if !components.contains_key(component_name) {
-                let component = Component::new(component_name, Some(&lua_registry))?;
-                components.insert(component_name.clone(), component);
+        for component_config in &config.bars.right {
+            let component_name = get_component_name(component_config);
+            if let std::collections::hash_map::Entry::Vacant(e) = components.entry(component_name) {
+                let component = Component::new(component_config, Some(&lua_registry))?;
+                e.insert(component);
             }
         }
 
@@ -221,10 +285,13 @@ impl ComponentManager {
     }
 
     pub fn get_bar_components(&self, bar: &str) -> Vec<&Component> {
-        if let Some(component_names) = self.config.get_components_for_bar(bar) {
-            component_names
+        if let Some(component_configs) = self.config.get_components_for_bar(bar) {
+            component_configs
                 .iter()
-                .filter_map(|name| self.components.get(name))
+                .filter_map(|config| {
+                    let name = get_component_name(config);
+                    self.components.get(&name)
+                })
                 .collect()
         } else {
             Vec::new()
@@ -251,22 +318,25 @@ impl ComponentManager {
         let mut components = HashMap::new();
 
         // Create all components (unknown ones become error icons)
-        for component_name in &new_config.bars.left {
-            let component = Component::new(component_name, Some(&self.lua_registry))?;
-            components.insert(component_name.clone(), component);
+        for component_config in &new_config.bars.left {
+            let component_name = get_component_name(component_config);
+            let component = Component::new(component_config, Some(&self.lua_registry))?;
+            components.insert(component_name, component);
         }
 
-        for component_name in &new_config.bars.middle {
-            if !components.contains_key(component_name) {
-                let component = Component::new(component_name, Some(&self.lua_registry))?;
-                components.insert(component_name.clone(), component);
+        for component_config in &new_config.bars.middle {
+            let component_name = get_component_name(component_config);
+            if let std::collections::hash_map::Entry::Vacant(e) = components.entry(component_name) {
+                let component = Component::new(component_config, Some(&self.lua_registry))?;
+                e.insert(component);
             }
         }
 
-        for component_name in &new_config.bars.right {
-            if !components.contains_key(component_name) {
-                let component = Component::new(component_name, Some(&self.lua_registry))?;
-                components.insert(component_name.clone(), component);
+        for component_config in &new_config.bars.right {
+            let component_name = get_component_name(component_config);
+            if let std::collections::hash_map::Entry::Vacant(e) = components.entry(component_name) {
+                let component = Component::new(component_config, Some(&self.lua_registry))?;
+                e.insert(component);
             }
         }
 

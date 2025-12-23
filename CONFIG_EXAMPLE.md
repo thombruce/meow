@@ -12,7 +12,7 @@ This configuration file allows you to customize which components appear in each 
 - `temperature` - CPU temperature
 - `cpu` - CPU usage
 - `ram` - Memory usage
-- `wifi` - WiFi connection status
+- `wifi` - WiFi connection status (supports sparkline mode)
 - `brightness` - Screen brightness
 - `volume` - Volume level
 - `battery` - Battery status
@@ -20,6 +20,10 @@ This configuration file allows you to customize which components appear in each 
 - `space` - Single space character (" ") for fine-tuned spacing
 
 ## Configuration Structure
+
+### Simple Component Configuration
+
+Components can be configured as simple strings:
 
 ```json
 {
@@ -41,6 +45,47 @@ This configuration file allows you to customize which components appear in each 
   }
 }
 ```
+
+### Advanced Component Configuration
+
+Some components (like `wifi`) support advanced configuration using objects:
+
+```json
+{
+  "bars": {
+    "left": ["workspaces"],
+    "middle": ["time", "separator", "weather"],
+    "right": [
+      "temperature",
+      "cpu", 
+      "ram",
+      "separator",
+      {
+        "component": "wifi",
+        "sparkline": true,
+        "sparkline_length": 20,
+        "update_interval": 2
+      },
+      "separator",
+      "brightness",
+      "volume",
+      "separator",
+      "battery"
+    ]
+  }
+}
+```
+
+#### WiFi Sparkline Configuration
+
+The WiFi component supports an optional sparkline mode that shows network usage as an animated chart:
+
+- `component`: Must be "wifi"
+- `sparkline`: Set to `true` to enable sparkline mode
+- `sparkline_length`: Number of data points in the sparkline (default: 20)
+- `update_interval`: Update interval in seconds (default: 2)
+
+When sparkline mode is enabled, the WiFi component will display network usage using Unicode block characters instead of the network name.
 
 ## Customization Examples
 

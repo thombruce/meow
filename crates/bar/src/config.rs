@@ -8,35 +8,45 @@ pub struct Config {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BarsConfig {
-    pub left: Vec<String>,
-    pub middle: Vec<String>,
-    pub right: Vec<String>,
+    pub left: Vec<ComponentConfig>,
+    pub middle: Vec<ComponentConfig>,
+    pub right: Vec<ComponentConfig>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum ComponentConfig {
+    Simple(String),
+    Detailed(serde_json::Value),
 }
 
 impl Default for Config {
     fn default() -> Self {
         Self {
             bars: BarsConfig {
-                left: vec!["workspaces".to_string(), "windows".to_string()],
+                left: vec![
+                    ComponentConfig::Simple("workspaces".to_string()),
+                    ComponentConfig::Simple("windows".to_string()),
+                ],
                 middle: vec![
-                    "time".to_string(),
-                    "separator".to_string(),
-                    "weather".to_string(),
+                    ComponentConfig::Simple("time".to_string()),
+                    ComponentConfig::Simple("separator".to_string()),
+                    ComponentConfig::Simple("weather".to_string()),
                 ],
                 right: vec![
-                    "temperature".to_string(),
-                    "space".to_string(),
-                    "cpu".to_string(),
-                    "space".to_string(),
-                    "ram".to_string(),
-                    "separator".to_string(),
-                    "wifi".to_string(),
-                    "separator".to_string(),
-                    "brightness".to_string(),
-                    "space".to_string(),
-                    "volume".to_string(),
-                    "separator".to_string(),
-                    "battery".to_string(),
+                    ComponentConfig::Simple("temperature".to_string()),
+                    ComponentConfig::Simple("space".to_string()),
+                    ComponentConfig::Simple("cpu".to_string()),
+                    ComponentConfig::Simple("space".to_string()),
+                    ComponentConfig::Simple("ram".to_string()),
+                    ComponentConfig::Simple("separator".to_string()),
+                    ComponentConfig::Simple("wifi".to_string()),
+                    ComponentConfig::Simple("separator".to_string()),
+                    ComponentConfig::Simple("brightness".to_string()),
+                    ComponentConfig::Simple("space".to_string()),
+                    ComponentConfig::Simple("volume".to_string()),
+                    ComponentConfig::Simple("separator".to_string()),
+                    ComponentConfig::Simple("battery".to_string()),
                 ],
             },
             colorize: true,
@@ -79,7 +89,7 @@ impl Config {
             .join("bar.json")
     }
 
-    pub fn get_components_for_bar(&self, bar: &str) -> Option<&Vec<String>> {
+    pub fn get_components_for_bar(&self, bar: &str) -> Option<&Vec<ComponentConfig>> {
         match bar {
             "left" => Some(&self.bars.left),
             "middle" => Some(&self.bars.middle),
