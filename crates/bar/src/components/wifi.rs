@@ -1,9 +1,5 @@
 use crate::components::ConfigurableComponent;
-use ratatui::{
-    prelude::Stylize,
-    style::Color,
-    text::Span,
-};
+use ratatui::{prelude::Stylize, style::Color, text::Span};
 use serde::{Deserialize, Serialize};
 use std::process::Command;
 use std::time::{Duration, Instant};
@@ -143,10 +139,10 @@ impl Wifi {
 
     fn render_sparkline_as_spans(&self, colorize: bool) -> Vec<Span<'_>> {
         // Create a sparkline visualization using Ratatui's approach
-        // 
+        //
         // This function uses the same normalization logic as Ratatui's Sparkline widget
         // but returns spans for compatibility with existing architecture
-        
+
         if self.network_usage.is_empty() {
             // No data yet, show just the icon
             let icon = if self.status == "connected" {
@@ -177,7 +173,7 @@ impl Wifi {
 
         // Find max value for normalization (same as Ratatui's approach)
         let max_value = self.network_usage.iter().max().copied().unwrap_or(1);
-        
+
         // Convert data to sparkline characters using Ratatui's normalization
         let sparkline_chars: String = self
             .network_usage
@@ -189,17 +185,17 @@ impl Wifi {
                 } else {
                     (value as f64 / max_value as f64) * 8.0
                 };
-                
+
                 match normalized as u64 {
-                    0 => ' ',  // No activity
-                    1 => '▁',  // 1/8 height
-                    2 => '▂',  // 2/8 height  
-                    3 => '▃',  // 3/8 height
-                    4 => '▄',  // 4/8 height
-                    5 => '▅',  // 5/8 height
-                    6 => '▆',  // 6/8 height
-                    7 => '▇',  // 7/8 height
-                    _ => '█',  // 8/8 height - full block
+                    0 => ' ', // No activity
+                    1 => '▁', // 1/8 height
+                    2 => '▂', // 2/8 height
+                    3 => '▃', // 3/8 height
+                    4 => '▄', // 4/8 height
+                    5 => '▅', // 5/8 height
+                    6 => '▆', // 6/8 height
+                    7 => '▇', // 7/8 height
+                    _ => '█', // 8/8 height - full block
                 }
             })
             .collect();
@@ -275,7 +271,7 @@ mod sparkline_tests {
         // Test sparkline normalization logic using Ratatui's approach
         let usage_data = [0, 100, 200, 300, 400, 500, 600, 700, 800];
         let max_value = 800;
-        
+
         // Apply normalization logic that mimics Ratatui's Sparkline widget
         let sparkline_chars: String = usage_data
             .iter()
@@ -285,11 +281,11 @@ mod sparkline_tests {
                 } else {
                     (usage as f64 / max_value as f64) * 8.0
                 };
-                
+
                 match normalized as u64 {
                     0 => ' ',
                     1 => '▁',
-                    2 => '▂', 
+                    2 => '▂',
                     3 => '▃',
                     4 => '▄',
                     5 => '▅',
@@ -299,14 +295,14 @@ mod sparkline_tests {
                 }
             })
             .collect();
-        
+
         println!("Original: {:?}", usage_data);
         println!("Sparkline: '{}'", sparkline_chars);
-        
+
         // Should match Ratatui's approach
         assert_eq!(sparkline_chars, " ▁▂▃▄▅▆▇█");
     }
-    
+
     #[test]
     fn test_edge_cases() {
         // Test zero values
@@ -320,11 +316,11 @@ mod sparkline_tests {
                 } else {
                     (usage as f64 / max_value as f64) * 8.0
                 };
-                
+
                 match normalized as u64 {
                     0 => ' ',
                     1 => '▁',
-                    2 => '▂', 
+                    2 => '▂',
                     3 => '▃',
                     4 => '▄',
                     5 => '▅',
@@ -335,7 +331,7 @@ mod sparkline_tests {
             })
             .collect();
         assert_eq!(sparkline_chars, "   "); // All spaces for zero usage
-        
+
         // Test single value
         let single_data = [500];
         let max_value = 500;
@@ -347,11 +343,11 @@ mod sparkline_tests {
                 } else {
                     (usage as f64 / max_value as f64) * 8.0
                 };
-                
+
                 match normalized as u64 {
                     0 => ' ',
                     1 => '▁',
-                    2 => '▂', 
+                    2 => '▂',
                     3 => '▃',
                     4 => '▄',
                     5 => '▅',
