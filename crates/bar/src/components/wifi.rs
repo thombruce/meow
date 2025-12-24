@@ -142,11 +142,10 @@ impl Wifi {
     }
 
     fn render_sparkline_as_spans(&self, colorize: bool) -> Vec<Span<'_>> {
-        // Create a sparkline visualization of network usage over time
+        // Create a sparkline visualization using Ratatui's approach
         // 
-        // Simplified approach: Ratatui's Sparkline handles normalization and character mapping,
-        // but since we need to return Vec<Span>, we manually convert data
-        // to sparkline characters using a simple relative approach.
+        // This function uses the same normalization logic as Ratatui's Sparkline widget
+        // but returns spans for compatibility with existing architecture
         
         if self.network_usage.is_empty() {
             // No data yet, show just the icon
@@ -157,7 +156,7 @@ impl Wifi {
             };
             let text = format!("{} [no data]", icon);
             let span = Span::raw(text);
-            if colorize {
+            return if colorize {
                 let color = if self.status == "disconnected" {
                     Color::Red
                 } else {
@@ -166,52 +165,57 @@ impl Wifi {
                 vec![span.fg(color)]
             } else {
                 vec![span]
-            }
-        } else {
-            // Create a simple sparkline by mapping relative usage to Unicode blocks
-            // This approach is much simpler than manual normalization
-            let max_usage = self.network_usage.iter().max().copied().unwrap_or(1);
-            let sparkline_chars: String = self
-                .network_usage
-                .iter()
-                .map(|&usage| {
-                    // Simple ratio calculation: 0-1 -> 0-8 range for 9 Unicode levels
-                    let ratio = usage as f64 / max_usage as f64;
-                    let level = (ratio * 8.0).round() as u64;
-                    
-                    match level {
-                        0 => ' ',  // No activity
-                        1 => '▁',  // 1/8 height
-                        2 => '▂',  // 2/8 height  
-                        3 => '▃',  // 3/8 height
-                        4 => '▄',  // 4/8 height
-                        5 => '▅',  // 5/8 height
-                        6 => '▆',  // 6/8 height
-                        7 => '▇',  // 7/8 height
-                        _ => '█',  // 8/8 height - full block (8 or higher)
-                    }
-                })
-                .collect();
-
-            let icon = if self.status == "connected" {
-                "󰤨"
-            } else {
-                "󰤮"
             };
+        }
 
-            let text = format!("{} {}", icon, sparkline_chars);
-            let span = Span::raw(text);
+        // Use the same approach as Ratatui's Sparkline widget
+        let icon = if self.status == "connected" {
+            "󰤨"
+        } else {
+            "󰤮"
+        };
 
-            if colorize {
-                let color = if self.status == "disconnected" {
-                    Color::Red
+        // Find max value for normalization (same as Ratatui's approach)
+        let max_value = self.network_usage.iter().max().copied().unwrap_or(1);
+        
+        // Convert data to sparkline characters using Ratatui's normalization
+        let sparkline_chars: String = self
+            .network_usage
+            .iter()
+            .map(|&value| {
+                // Normalize to 0-8 range (9 Unicode levels like Ratatui uses)
+                let normalized = if max_value == 0 {
+                    0.0
                 } else {
-                    Color::Blue
+                    (value as f64 / max_value as f64) * 8.0
                 };
-                vec![span.fg(color)]
+                
+                match normalized as u64 {
+                    0 => ' ',  // No activity
+                    1 => '▁',  // 1/8 height
+                    2 => '▂',  // 2/8 height  
+                    3 => '▃',  // 3/8 height
+                    4 => '▄',  // 4/8 height
+                    5 => '▅',  // 5/8 height
+                    6 => '▆',  // 6/8 height
+                    7 => '▇',  // 7/8 height
+                    _ => '█',  // 8/8 height - full block
+                }
+            })
+            .collect();
+
+        let text = format!("{} {}", icon, sparkline_chars);
+        let span = Span::raw(text);
+
+        if colorize {
+            let color = if self.status == "disconnected" {
+                Color::Red
             } else {
-                vec![span]
-            }
+                Color::Blue
+            };
+            vec![span.fg(color)]
+        } else {
+            vec![span]
         }
     }
 }
@@ -268,18 +272,21 @@ fn get_network_stats() -> Option<(u64, u64)> {
 mod sparkline_tests {
     #[test]
     fn test_sparkline_normalization() {
-        // Test sparkline normalization logic - simplified approach
-        let usage_data = vec![0, 100, 200, 300, 400, 500, 600, 700, 800];
-        let max_usage = 800;
+        // Test sparkline normalization logic using Ratatui's approach
+        let usage_data = [0, 100, 200, 300, 400, 500, 600, 700, 800];
+        let max_value = 800;
         
-        // Apply new simplified normalization logic (using float ratio)
+        // Apply normalization logic that mimics Ratatui's Sparkline widget
         let sparkline_chars: String = usage_data
             .iter()
             .map(|&usage| {
-                let ratio = usage as f64 / max_usage as f64;
-                let level = (ratio * 8.0).round() as u64;
+                let normalized = if max_value == 0 {
+                    0.0
+                } else {
+                    (usage as f64 / max_value as f64) * 8.0
+                };
                 
-                match level {
+                match normalized as u64 {
                     0 => ' ',
                     1 => '▁',
                     2 => '▂', 
@@ -296,7 +303,7 @@ mod sparkline_tests {
         println!("Original: {:?}", usage_data);
         println!("Sparkline: '{}'", sparkline_chars);
         
-        // The simplified approach should produce same result
+        // Should match Ratatui's approach
         assert_eq!(sparkline_chars, " ▁▂▃▄▅▆▇█");
     }
     
@@ -304,13 +311,17 @@ mod sparkline_tests {
     fn test_edge_cases() {
         // Test zero values
         let zero_data = [0, 0, 0];
-        let max_usage = 0;
+        let max_value = 0;
         let sparkline_chars: String = zero_data
-            .into_iter()
-            .map(|usage| {
-                let ratio = usage as f64 / max_usage.max(1) as f64;
-                let level = (ratio * 8.0).round() as u64;
-                match level {
+            .iter()
+            .map(|&usage| {
+                let normalized = if max_value == 0 {
+                    0.0
+                } else {
+                    (usage as f64 / max_value as f64) * 8.0
+                };
+                
+                match normalized as u64 {
                     0 => ' ',
                     1 => '▁',
                     2 => '▂', 
@@ -327,13 +338,17 @@ mod sparkline_tests {
         
         // Test single value
         let single_data = [500];
-        let max_usage = 500;
+        let max_value = 500;
         let sparkline_chars: String = single_data
-            .into_iter()
-            .map(|usage| {
-                let ratio = usage as f64 / max_usage as f64;
-                let level = (ratio * 8.0).round() as u64;
-                match level {
+            .iter()
+            .map(|&usage| {
+                let normalized = if max_value == 0 {
+                    0.0
+                } else {
+                    (usage as f64 / max_value as f64) * 8.0
+                };
+                
+                match normalized as u64 {
                     0 => ' ',
                     1 => '▁',
                     2 => '▂', 
