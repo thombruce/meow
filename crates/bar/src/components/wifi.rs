@@ -1,5 +1,9 @@
 use crate::components::ConfigurableComponent;
-use ratatui::{prelude::Stylize, style::Color, text::Span};
+use ratatui::{
+    prelude::Stylize,
+    style::Color,
+    text::Span,
+};
 use serde::{Deserialize, Serialize};
 use std::process::Command;
 use std::time::{Duration, Instant};
@@ -140,78 +144,74 @@ impl Wifi {
     fn render_sparkline_as_spans(&self, colorize: bool) -> Vec<Span<'_>> {
         // Create a sparkline visualization of network usage over time
         // 
-        // Algorithm:
-        // 1. Normalize usage values to relative scale (0-8) based on max usage in window
-        // 2. Map each normalized value to Unicode block character for visual representation
-        // 3. Display characters as horizontal sparkline showing activity patterns
-        //
-        // The * 8 multiplier is intentional - it scales usage values to match the
-        // 9 available Unicode block character levels (space + 8 incremental blocks)
-        //
-        // Normalize network usage values to 0-8 range for mapping to Unicode block characters
-        // 9 levels total: space(0) + 8 block characters(1-8) 
-        // We use 8 multiplier to get full range: 0=space, 1=▁, 2=▂, ..., 7=▇, 8=█
-        // This creates a relative sparkline where the highest usage gets the tallest block
-        let max_usage = self.network_usage.iter().max().copied().unwrap_or(1);
-        let normalized_usage: Vec<u64> = self
-            .network_usage
-            .iter()
-            .map(|&usage| {
-                if max_usage > 0 {
-                    // Scale to 0-8 range by multiplying by 8 and dividing by max
-                    // The original * 8 multiplier was correct - it maps to the 9 Unicode levels
-                    (usage * 8) / max_usage.max(1)
-                } else {
-                    0
-                }
-            })
-            .collect();
-
-        // Map normalized values to Unicode block characters
-        // Unicode block characters provide 9 distinct levels for sparkline visualization:
-        // 0 = ' ' (space - no activity)
-        // 1 = '▁' (1/8 height - minimal activity)  
-        // 2 = '▂' (2/8 height - low activity)
-        // 3 = '▃' (3/8 height - low-moderate activity)
-        // 4 = '▄' (4/8 height - moderate activity)
-        // 5 = '▅' (5/8 height - moderate-high activity)
-        // 6 = '▆' (6/8 height - high activity)
-        // 7 = '▇' (7/8 height - very high activity)
-        // 8 = '█' (8/8 height - maximum activity)
-        let sparkline_chars: String = normalized_usage
-            .iter()
-            .map(|&usage| match usage {
-                0 => ' ',  // No activity
-                1 => '▁',  // 1/8 height
-                2 => '▂',  // 2/8 height  
-                3 => '▃',  // 3/8 height
-                4 => '▄',  // 4/8 height
-                5 => '▅',  // 5/8 height
-                6 => '▆',  // 6/8 height
-                7 => '▇',  // 7/8 height
-                8 => '█',  // 8/8 height - full block
-                _ => '█',  // Fallback for values >= 8 (shouldn't occur)
-            })
-            .collect();
-
-        let icon = if self.status == "connected" {
-            "󰤨"
-        } else {
-            "󰤮"
-        };
-
-        let text = format!("{} {}", icon, sparkline_chars);
-        let span = Span::raw(text);
-
-        if colorize {
-            let color = if self.status == "disconnected" {
-                Color::Red
+        // Simplified approach: Ratatui's Sparkline handles normalization and character mapping,
+        // but since we need to return Vec<Span>, we manually convert data
+        // to sparkline characters using a simple relative approach.
+        
+        if self.network_usage.is_empty() {
+            // No data yet, show just the icon
+            let icon = if self.status == "connected" {
+                "󰤨"
             } else {
-                Color::Blue
+                "󰤮"
             };
-            vec![span.fg(color)]
+            let text = format!("{} [no data]", icon);
+            let span = Span::raw(text);
+            if colorize {
+                let color = if self.status == "disconnected" {
+                    Color::Red
+                } else {
+                    Color::Blue
+                };
+                vec![span.fg(color)]
+            } else {
+                vec![span]
+            }
         } else {
-            vec![span]
+            // Create a simple sparkline by mapping relative usage to Unicode blocks
+            // This approach is much simpler than manual normalization
+            let max_usage = self.network_usage.iter().max().copied().unwrap_or(1);
+            let sparkline_chars: String = self
+                .network_usage
+                .iter()
+                .map(|&usage| {
+                    // Simple ratio calculation: 0-1 -> 0-8 range for 9 Unicode levels
+                    let ratio = usage as f64 / max_usage as f64;
+                    let level = (ratio * 8.0).round() as u64;
+                    
+                    match level {
+                        0 => ' ',  // No activity
+                        1 => '▁',  // 1/8 height
+                        2 => '▂',  // 2/8 height  
+                        3 => '▃',  // 3/8 height
+                        4 => '▄',  // 4/8 height
+                        5 => '▅',  // 5/8 height
+                        6 => '▆',  // 6/8 height
+                        7 => '▇',  // 7/8 height
+                        _ => '█',  // 8/8 height - full block (8 or higher)
+                    }
+                })
+                .collect();
+
+            let icon = if self.status == "connected" {
+                "󰤨"
+            } else {
+                "󰤮"
+            };
+
+            let text = format!("{} {}", icon, sparkline_chars);
+            let span = Span::raw(text);
+
+            if colorize {
+                let color = if self.status == "disconnected" {
+                    Color::Red
+                } else {
+                    Color::Blue
+                };
+                vec![span.fg(color)]
+            } else {
+                vec![span]
+            }
         }
     }
 }
@@ -266,49 +266,86 @@ fn get_network_stats() -> Option<(u64, u64)> {
 
 #[cfg(test)]
 mod sparkline_tests {
-
     #[test]
     fn test_sparkline_normalization() {
-        // Test sparkline normalization logic
+        // Test sparkline normalization logic - simplified approach
         let usage_data = vec![0, 100, 200, 300, 400, 500, 600, 700, 800];
         let max_usage = 800;
         
-        // Apply same normalization logic as in the sparkline
-        let normalized: Vec<u64> = usage_data
+        // Apply new simplified normalization logic (using float ratio)
+        let sparkline_chars: String = usage_data
             .iter()
             .map(|&usage| {
-                if max_usage > 0 {
-                    (usage * 8) / max_usage.max(1)
-                } else {
-                    0
+                let ratio = usage as f64 / max_usage as f64;
+                let level = (ratio * 8.0).round() as u64;
+                
+                match level {
+                    0 => ' ',
+                    1 => '▁',
+                    2 => '▂', 
+                    3 => '▃',
+                    4 => '▄',
+                    5 => '▅',
+                    6 => '▆',
+                    7 => '▇',
+                    _ => '█',
                 }
             })
             .collect();
         
         println!("Original: {:?}", usage_data);
-        println!("Normalized: {:?}", normalized);
+        println!("Sparkline: '{}'", sparkline_chars);
         
-        // Verify mapping produces expected 0-8 range
-        assert_eq!(normalized, vec![0, 1, 2, 3, 4, 5, 6, 7, 8]);
-        
-        // Test character mapping
-        let sparkline_chars: String = normalized
-            .iter()
-            .map(|&usage| match usage {
-                0 => ' ',
-                1 => '▁',
-                2 => '▂', 
-                3 => '▃',
-                4 => '▄',
-                5 => '▅',
-                6 => '▆',
-                7 => '▇',
-                8 => '█',
-                _ => '█',
+        // The simplified approach should produce same result
+        assert_eq!(sparkline_chars, " ▁▂▃▄▅▆▇█");
+    }
+    
+    #[test]
+    fn test_edge_cases() {
+        // Test zero values
+        let zero_data = [0, 0, 0];
+        let max_usage = 0;
+        let sparkline_chars: String = zero_data
+            .into_iter()
+            .map(|usage| {
+                let ratio = usage as f64 / max_usage.max(1) as f64;
+                let level = (ratio * 8.0).round() as u64;
+                match level {
+                    0 => ' ',
+                    1 => '▁',
+                    2 => '▂', 
+                    3 => '▃',
+                    4 => '▄',
+                    5 => '▅',
+                    6 => '▆',
+                    7 => '▇',
+                    _ => '█',
+                }
             })
             .collect();
-            
-        println!("Sparkline: '{}'", sparkline_chars);
-        assert_eq!(sparkline_chars, " ▁▂▃▄▅▆▇█");
+        assert_eq!(sparkline_chars, "   "); // All spaces for zero usage
+        
+        // Test single value
+        let single_data = [500];
+        let max_usage = 500;
+        let sparkline_chars: String = single_data
+            .into_iter()
+            .map(|usage| {
+                let ratio = usage as f64 / max_usage as f64;
+                let level = (ratio * 8.0).round() as u64;
+                match level {
+                    0 => ' ',
+                    1 => '▁',
+                    2 => '▂', 
+                    3 => '▃',
+                    4 => '▄',
+                    5 => '▅',
+                    6 => '▆',
+                    7 => '▇',
+                    _ => '█',
+                }
+            })
+            .collect();
+        assert_eq!(sparkline_chars, "█"); // Full block for max usage
     }
 }
