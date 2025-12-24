@@ -138,31 +138,59 @@ impl Wifi {
     }
 
     fn render_sparkline_as_spans(&self, colorize: bool) -> Vec<Span<'_>> {
+        // Create a sparkline visualization of network usage over time
+        // 
+        // Algorithm:
+        // 1. Normalize usage values to relative scale (0-8) based on max usage in window
+        // 2. Map each normalized value to Unicode block character for visual representation
+        // 3. Display characters as horizontal sparkline showing activity patterns
+        //
+        // The * 8 multiplier is intentional - it scales usage values to match the
+        // 9 available Unicode block character levels (space + 8 incremental blocks)
+        //
+        // Normalize network usage values to 0-8 range for mapping to Unicode block characters
+        // 9 levels total: space(0) + 8 block characters(1-8) 
+        // We use 8 multiplier to get full range: 0=space, 1=▁, 2=▂, ..., 7=▇, 8=█
+        // This creates a relative sparkline where the highest usage gets the tallest block
         let max_usage = self.network_usage.iter().max().copied().unwrap_or(1);
         let normalized_usage: Vec<u64> = self
             .network_usage
             .iter()
             .map(|&usage| {
                 if max_usage > 0 {
-                    usage * 8 / max_usage.max(1)
+                    // Scale to 0-8 range by multiplying by 8 and dividing by max
+                    // The original * 8 multiplier was correct - it maps to the 9 Unicode levels
+                    (usage * 8) / max_usage.max(1)
                 } else {
                     0
                 }
             })
             .collect();
 
+        // Map normalized values to Unicode block characters
+        // Unicode block characters provide 9 distinct levels for sparkline visualization:
+        // 0 = ' ' (space - no activity)
+        // 1 = '▁' (1/8 height - minimal activity)  
+        // 2 = '▂' (2/8 height - low activity)
+        // 3 = '▃' (3/8 height - low-moderate activity)
+        // 4 = '▄' (4/8 height - moderate activity)
+        // 5 = '▅' (5/8 height - moderate-high activity)
+        // 6 = '▆' (6/8 height - high activity)
+        // 7 = '▇' (7/8 height - very high activity)
+        // 8 = '█' (8/8 height - maximum activity)
         let sparkline_chars: String = normalized_usage
             .iter()
             .map(|&usage| match usage {
-                0 => ' ',
-                1 => '▁',
-                2 => '▂',
-                3 => '▃',
-                4 => '▄',
-                5 => '▅',
-                6 => '▆',
-                7 => '▇',
-                _ => '█',
+                0 => ' ',  // No activity
+                1 => '▁',  // 1/8 height
+                2 => '▂',  // 2/8 height  
+                3 => '▃',  // 3/8 height
+                4 => '▄',  // 4/8 height
+                5 => '▅',  // 5/8 height
+                6 => '▆',  // 6/8 height
+                7 => '▇',  // 7/8 height
+                8 => '█',  // 8/8 height - full block
+                _ => '█',  // Fallback for values >= 8 (shouldn't occur)
             })
             .collect();
 
