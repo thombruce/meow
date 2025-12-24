@@ -16,11 +16,11 @@ pub struct WifiConfig {
 }
 
 fn default_sparkline_length() -> usize {
-    20
+    10
 }
 
 fn default_update_interval() -> u64 {
-    2
+    5
 }
 
 impl ConfigurableComponent for Wifi {
@@ -58,7 +58,7 @@ impl Wifi {
             last_update: Instant::now(),
             update_interval: Duration::from_secs(2),
             sparkline_mode: false,
-            sparkline_length: 20,
+            sparkline_length: 10,
             network_usage: Vec::new(),
             last_total_bytes: None,
         }

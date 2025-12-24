@@ -63,8 +63,8 @@ Some components (like `wifi`) support advanced configuration using objects:
       {
         "component": "wifi",
         "sparkline": true,
-        "sparkline_length": 20,
-        "update_interval": 2
+        "sparkline_length": 10,
+        "update_interval": 5
       },
       "separator",
       "brightness",
@@ -82,8 +82,8 @@ The WiFi component supports an optional sparkline mode that shows network usage 
 
 - `component`: Must be "wifi"
 - `sparkline`: Set to `true` to enable sparkline mode
-- `sparkline_length`: Number of data points in the sparkline (default: 20)
-- `update_interval`: Update interval in seconds (default: 2)
+- `sparkline_length`: Number of data points in the sparkline (default: 10)
+- `update_interval`: Update interval in seconds (default: 5)
 
 When sparkline mode is enabled, the WiFi component will display network usage using Unicode block characters instead of the network name.
 
