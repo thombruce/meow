@@ -8,6 +8,7 @@ pub mod ram;
 pub mod right_bar;
 pub mod separator;
 pub mod space;
+pub mod sparkline;
 pub mod temperature;
 pub mod time;
 pub mod volume;

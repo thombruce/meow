@@ -1,3 +1,4 @@
+use super::sparkline::Sparkline;
 use ratatui::{prelude::Stylize, style::Color, text::Span};
 use std::time::{Duration, Instant};
 use sysinfo::{MemoryRefreshKind, RefreshKind};
@@ -9,9 +10,7 @@ pub struct Ram {
     system: sysinfo::System,
     last_update: Instant,
     update_interval: Duration,
-    sparkline: bool,
-    sparkline_length: usize,
-    sparkline_data: Vec<u32>,
+    sparkline: Sparkline,
 }
 
 impl Ram {
@@ -29,9 +28,9 @@ impl Ram {
         );
 
         let usage = "0".to_string();
-        let cached_span_content = if sparkline {
-            let sparkline_str = " ".repeat(sparkline_length);
-            format!("󰍛 {}", sparkline_str)
+        let sparkline = Sparkline::new(sparkline, sparkline_length);
+        let cached_span_content = if sparkline.enabled {
+            format!("󰍛 {}", sparkline.render_with_spaces())
         } else {
             format!("󰍛 {}%", usage)
         };
@@ -43,8 +42,6 @@ impl Ram {
             last_update: Instant::now(),
             update_interval: Duration::from_secs(sparkline_update_freq),
             sparkline,
-            sparkline_length,
-            sparkline_data: vec![0; sparkline_length],
         }
     }
 
@@ -58,14 +55,12 @@ impl Ram {
                 * 100.0) as u32;
             self.usage = mem_percent.to_string();
 
-            if self.sparkline {
-                // Update sparkline data (shift left and add new value)
-                self.sparkline_data.remove(0);
-                self.sparkline_data.push(mem_percent);
+            if self.sparkline.enabled {
+                // Update sparkline data
+                self.sparkline.update(mem_percent as u64);
 
                 // Render sparkline
-                let sparkline_str = self.render_sparkline();
-                self.cached_span_content = format!("󰍛 {}", sparkline_str);
+                self.cached_span_content = format!("󰍛 {}", self.sparkline.render());
             } else {
                 self.cached_span_content = format!("󰍛 {}%", self.usage);
             }
@@ -90,26 +85,5 @@ impl Ram {
         } else {
             vec![span]
         }
-    }
-
-    fn render_sparkline(&self) -> String {
-        let max_value = self.sparkline_data.iter().max().unwrap_or(&1);
-        if *max_value == 0 {
-            return " ".repeat(self.sparkline_length);
-        }
-
-        let bars = [" ", "▁", "▂", "▃", "▄", "▅", "▆", "▇", "█"];
-        let mut result = String::new();
-
-        for &value in &self.sparkline_data {
-            if value == 0 {
-                result.push(' ');
-            } else {
-                let index = ((value as f64 / *max_value as f64) * (bars.len() - 1) as f64) as usize;
-                result.push(bars[index.min(bars.len() - 1)].chars().next().unwrap());
-            }
-        }
-
-        result
     }
 }

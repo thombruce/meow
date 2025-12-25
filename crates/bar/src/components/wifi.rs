@@ -1,3 +1,4 @@
+use super::sparkline::Sparkline;
 use ratatui::{prelude::Stylize, style::Color, text::Span};
 use std::process::Command;
 use std::time::{Duration, Instant};
@@ -9,9 +10,7 @@ pub struct Wifi {
     cached_span_content: String,
     last_update: Instant,
     update_interval: Duration,
-    sparkline: bool,
-    sparkline_length: usize,
-    sparkline_data: Vec<u64>,
+    sparkline: Sparkline,
     last_bytes: Option<u64>,
 }
 
@@ -40,9 +39,9 @@ impl Wifi {
             "Off"
         };
 
-        let cached_span_content = if sparkline {
-            let sparkline_str = " ".repeat(sparkline_length);
-            format!("{} {}", icon, sparkline_str)
+        let sparkline = Sparkline::new(sparkline, sparkline_length);
+        let cached_span_content = if sparkline.enabled {
+            format!("{} {}", icon, sparkline.render_with_spaces())
         } else {
             format!("{} {}", icon, network_text)
         };
@@ -54,8 +53,6 @@ impl Wifi {
             last_update: Instant::now(),
             update_interval: Duration::from_secs(sparkline_update_freq),
             sparkline,
-            sparkline_length,
-            sparkline_data: vec![0; sparkline_length],
             last_bytes: None,
         }
     }
@@ -73,7 +70,7 @@ impl Wifi {
                     "󰤮"
                 };
 
-                if self.sparkline {
+                if self.sparkline.enabled {
                     if let Some(current_bytes) = get_network_usage() {
                         let usage = if let Some(last_bytes) = self.last_bytes {
                             current_bytes.saturating_sub(last_bytes)
@@ -83,16 +80,14 @@ impl Wifi {
 
                         self.last_bytes = Some(current_bytes);
 
-                        // Update sparkline data (shift left and add new value)
-                        self.sparkline_data.remove(0);
-                        self.sparkline_data.push(usage);
+                        // Update sparkline data
+                        self.sparkline.update(usage);
 
                         // Render sparkline
-                        let sparkline_str = self.render_sparkline();
-                        self.cached_span_content = format!("{} {}", icon, sparkline_str);
+                        self.cached_span_content = format!("{} {}", icon, self.sparkline.render());
                     } else {
                         self.cached_span_content =
-                            format!("{} {}", icon, " ".repeat(self.sparkline_length));
+                            format!("{} {}", icon, self.sparkline.render_with_spaces());
                     }
                 } else {
                     let network_text = if self.status == "connected" && !self.network.is_empty() {
@@ -120,27 +115,6 @@ impl Wifi {
         } else {
             vec![span]
         }
-    }
-
-    fn render_sparkline(&self) -> String {
-        let max_value = self.sparkline_data.iter().max().unwrap_or(&1);
-        if *max_value == 0 {
-            return " ".repeat(self.sparkline_length);
-        }
-
-        let bars = [" ", "▁", "▂", "▃", "▄", "▅", "▆", "▇", "█"];
-        let mut result = String::new();
-
-        for &value in &self.sparkline_data {
-            if value == 0 {
-                result.push(' ');
-            } else {
-                let index = ((value as f64 / *max_value as f64) * (bars.len() - 1) as f64) as usize;
-                result.push(bars[index.min(bars.len() - 1)].chars().next().unwrap());
-            }
-        }
-
-        result
     }
 }
 
