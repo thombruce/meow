@@ -5,6 +5,7 @@ use sysinfo::{MemoryRefreshKind, RefreshKind};
 #[derive(Debug)]
 pub struct Ram {
     pub usage: String,
+    cached_span_content: String,
     system: sysinfo::System,
     last_update: Instant,
     update_interval: Duration,
@@ -16,8 +17,12 @@ impl Ram {
             RefreshKind::nothing().with_memory(MemoryRefreshKind::everything()),
         );
 
+        let usage = "0".to_string();
+        let cached_span_content = format!("󰍛 {}%", usage);
+
         Self {
-            usage: "0".to_string(),
+            usage,
+            cached_span_content,
             system,
             last_update: Instant::now(),
             update_interval: Duration::from_secs(2),
@@ -33,17 +38,14 @@ impl Ram {
                 / self.system.total_memory() as f64
                 * 100.0) as u32;
             self.usage = mem_percent.to_string();
+            self.cached_span_content = format!("󰍛 {}%", self.usage);
 
             self.last_update = now;
         }
     }
 
-    pub fn render(&self) -> String {
-        format!("󰍛 {}%", self.usage)
-    }
-
     pub fn render_as_spans(&self, colorize: bool) -> Vec<Span<'_>> {
-        let span = Span::raw(self.render());
+        let span = Span::raw(&self.cached_span_content);
         if colorize {
             let color = if let Ok(usage) = self.usage.parse::<u32>() {
                 if usage >= 90 {
