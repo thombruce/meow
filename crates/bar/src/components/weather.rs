@@ -13,6 +13,7 @@ pub struct WeatherData {
 #[derive(Debug)]
 pub struct Weather {
     data: Arc<Mutex<WeatherData>>,
+    cached_span_content: Arc<Mutex<String>>,
     last_update: Arc<Mutex<u64>>,
     _update_handle: tokio::task::JoinHandle<()>,
 }
@@ -40,9 +41,11 @@ impl Weather {
             condition: "Unknown".to_string(),
             icon: "󰖐".to_string(),
         }));
+        let cached_span_content = Arc::new(Mutex::new("󰖐 --°C".to_string()));
         let last_update = Arc::new(Mutex::new(0u64));
 
         let data_clone = data.clone();
+        let cached_span_content_clone = cached_span_content.clone();
         let last_update_clone = last_update.clone();
 
         // Spawn background task for weather updates
@@ -62,6 +65,13 @@ impl Weather {
                         data_guard.temperature = format!("{:.0}", weather_data.main.temp);
                         data_guard.condition = weather_data.weather[0].main.clone();
                         data_guard.icon = Self::get_weather_icon(&data_guard.condition);
+
+                        // Update cached span content
+                        let new_content =
+                            format!("{} {}°C", data_guard.icon, data_guard.temperature);
+                        if let Ok(mut cached_guard) = cached_span_content_clone.lock() {
+                            *cached_guard = new_content;
+                        }
                     }
 
                     if let Ok(mut last_update_guard) = last_update_clone.lock() {
@@ -73,6 +83,7 @@ impl Weather {
 
         Self {
             data,
+            cached_span_content,
             last_update,
             _update_handle: update_handle,
         }
@@ -91,6 +102,7 @@ impl Weather {
         {
             // First run, spawn immediate fetch
             let data_clone = self.data.clone();
+            let cached_span_content_clone = self.cached_span_content.clone();
             let last_update_clone = self.last_update.clone();
 
             tokio::spawn(async move {
@@ -104,6 +116,13 @@ impl Weather {
                         data_guard.temperature = format!("{:.0}", weather_data.main.temp);
                         data_guard.condition = weather_data.weather[0].main.clone();
                         data_guard.icon = Self::get_weather_icon(&data_guard.condition);
+
+                        // Update cached span content
+                        let new_content =
+                            format!("{} {}°C", data_guard.icon, data_guard.temperature);
+                        if let Ok(mut cached_guard) = cached_span_content_clone.lock() {
+                            *cached_guard = new_content;
+                        }
                     }
 
                     if let Ok(mut last_update_guard) = last_update_clone.lock() {
@@ -121,13 +140,14 @@ impl Weather {
             .clone()
     }
 
-    pub fn render(&self) -> String {
-        let data = self.get_weather_data();
-        format!("{} {}°C", data.icon, data.temperature)
-    }
-
     pub fn render_as_spans(&self, colorize: bool) -> Vec<Span<'_>> {
-        let span = Span::raw(self.render());
+        let cached_content = if let Ok(guard) = self.cached_span_content.lock() {
+            guard.clone()
+        } else {
+            "󰖐 --°C".to_string()
+        };
+
+        let span = Span::raw(cached_content);
         if colorize {
             let data = self.get_weather_data();
             let color = {

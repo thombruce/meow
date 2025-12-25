@@ -5,6 +5,7 @@ use sysinfo::{CpuRefreshKind, RefreshKind, System};
 #[derive(Debug)]
 pub struct Cpu {
     pub usage: String,
+    cached_span_content: String,
     system: System,
     last_update: Instant,
     update_interval: Duration,
@@ -16,8 +17,12 @@ impl Cpu {
             RefreshKind::nothing().with_cpu(CpuRefreshKind::everything()),
         );
 
+        let usage = "0".to_string();
+        let cached_span_content = format!("󰻠 {}%", usage);
+
         Self {
-            usage: "0".to_string(),
+            usage,
+            cached_span_content,
             system,
             last_update: Instant::now(),
             update_interval: Duration::from_secs(3),
@@ -34,17 +39,14 @@ impl Cpu {
             let sum = iter.fold(0.0, |acc, x| acc + x.cpu_usage());
             let avg: u32 = (sum / count) as u32;
             self.usage = avg.to_string();
+            self.cached_span_content = format!("󰻠 {}%", self.usage);
 
             self.last_update = now;
         }
     }
 
-    pub fn render(&self) -> String {
-        format!("󰻠 {}%", self.usage)
-    }
-
     pub fn render_as_spans(&self, colorize: bool) -> Vec<Span<'_>> {
-        let span = Span::raw(self.render());
+        let span = Span::raw(&self.cached_span_content);
         if colorize {
             let color = if let Ok(usage) = self.usage.parse::<u32>() {
                 if usage >= 90 {

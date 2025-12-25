@@ -5,6 +5,7 @@ use sysinfo::Components;
 #[derive(Debug)]
 pub struct Temperature {
     pub value: String,
+    cached_span_content: String,
     components: Components,
     last_update: Instant,
     update_interval: Duration,
@@ -13,9 +14,12 @@ pub struct Temperature {
 impl Temperature {
     pub fn new() -> Self {
         let components = Components::new();
+        let value = "0".to_string();
+        let cached_span_content = format!(" {}°C", value);
 
         Self {
-            value: "0".to_string(),
+            value,
+            cached_span_content,
             components,
             last_update: Instant::now(),
             update_interval: Duration::from_secs(5),
@@ -34,18 +38,15 @@ impl Temperature {
             }) && let Some(temp) = component.temperature()
             {
                 self.value = format!("{:.0}", temp);
+                self.cached_span_content = format!(" {}°C", self.value);
             }
 
             self.last_update = now;
         }
     }
 
-    pub fn render(&self) -> String {
-        format!(" {}°C", self.value)
-    }
-
     pub fn render_as_spans(&self, colorize: bool) -> Vec<Span<'_>> {
-        let span = Span::raw(self.render());
+        let span = Span::raw(&self.cached_span_content);
         if colorize {
             let color = if let Ok(temp) = self.value.parse::<u32>() {
                 if temp >= 80 {

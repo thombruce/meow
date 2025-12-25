@@ -9,25 +9,26 @@ static BRIGHTNESS_REGEX: std::sync::LazyLock<Regex> =
 #[derive(Debug)]
 pub struct Brightness {
     pub level: String,
+    cached_span_content: String,
 }
 
 impl Brightness {
     pub fn new() -> Self {
+        let level = get_system_brightness().unwrap_or_default();
+        let cached_span_content = format!("󰃠 {}", level);
         Self {
-            level: get_system_brightness().unwrap_or_default(),
+            level,
+            cached_span_content,
         }
     }
 
     pub fn update(&mut self) {
         self.level = get_system_brightness().unwrap_or_default();
-    }
-
-    pub fn render(&self) -> String {
-        format!("󰃠 {}", self.level)
+        self.cached_span_content = format!("󰃠 {}", self.level);
     }
 
     pub fn render_as_spans(&self, colorize: bool) -> Vec<Span<'_>> {
-        let span = Span::raw(self.render());
+        let span = Span::raw(&self.cached_span_content);
         if colorize {
             vec![span.fg(Color::White)]
         } else {

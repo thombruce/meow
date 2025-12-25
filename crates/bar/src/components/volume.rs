@@ -7,14 +7,20 @@ use crate::logging;
 pub struct Volume {
     pub level: String,
     pub is_muted: bool,
+    cached_span_content: String,
 }
 
 impl Volume {
     pub fn new() -> Self {
         let (level, is_muted) = get_system_volume().unwrap_or((0, false));
+        let level_str = level.to_string();
+        let icon = if is_muted { "󰝟" } else { "󰕾" };
+        let cached_span_content = format!("{} {}%", icon, level_str);
+
         Self {
-            level: level.to_string(),
+            level: level_str,
             is_muted,
+            cached_span_content,
         }
     }
 
@@ -22,18 +28,16 @@ impl Volume {
         let (level, is_muted) = get_system_volume().unwrap_or((0, false));
         self.level = level.to_string();
         self.is_muted = is_muted;
-    }
 
-    pub fn render(&self) -> String {
         let icon = if self.is_muted { "󰝟" } else { "󰕾" };
-        format!("{} {}%", icon, self.level)
+        self.cached_span_content = format!("{} {}%", icon, self.level);
     }
 
     pub fn render_as_spans(&self, colorize: bool) -> Vec<Span<'_>> {
         if self.is_muted || !colorize {
-            vec![Span::raw(self.render())]
+            vec![Span::raw(&self.cached_span_content)]
         } else {
-            vec![Span::raw(self.render()).fg(Color::White)]
+            vec![Span::raw(&self.cached_span_content).fg(Color::White)]
         }
     }
 }

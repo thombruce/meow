@@ -6,6 +6,7 @@ use std::time::{Duration, Instant};
 pub struct Wifi {
     pub status: String,
     pub network: String,
+    cached_span_content: String,
     last_update: Instant,
     update_interval: Duration,
 }
@@ -15,9 +16,24 @@ impl Wifi {
         let (status, network) =
             get_wifi_status().unwrap_or(("disconnected".to_string(), "".to_string()));
 
+        let icon = if status == "connected" {
+            "󰤨"
+        } else {
+            "󰤮"
+        };
+
+        let network_text = if status == "connected" && !network.is_empty() {
+            &network
+        } else {
+            "Off"
+        };
+
+        let cached_span_content = format!("{} {}", icon, network_text);
+
         Self {
             status,
             network,
+            cached_span_content,
             last_update: Instant::now(),
             update_interval: Duration::from_secs(2),
         }
@@ -29,30 +45,29 @@ impl Wifi {
             if let Some((status, network)) = get_wifi_status() {
                 self.status = status;
                 self.network = network;
+
+                // Update cached span content
+                let icon = if self.status == "connected" {
+                    "󰤨"
+                } else {
+                    "󰤮"
+                };
+
+                let network_text = if self.status == "connected" && !self.network.is_empty() {
+                    &self.network
+                } else {
+                    "Off"
+                };
+
+                self.cached_span_content = format!("{} {}", icon, network_text);
             }
 
             self.last_update = now;
         }
     }
 
-    pub fn render(&self) -> String {
-        let icon = if self.status == "connected" {
-            "󰤨"
-        } else {
-            "󰤮"
-        };
-
-        let network_text = if self.status == "connected" && !self.network.is_empty() {
-            &self.network
-        } else {
-            "Off"
-        };
-
-        format!("{} {}", icon, network_text)
-    }
-
     pub fn render_as_spans(&self, colorize: bool) -> Vec<Span<'_>> {
-        let span = Span::raw(self.render());
+        let span = Span::raw(&self.cached_span_content);
         if colorize {
             let color = if self.status == "disconnected" {
                 Color::Red // Disconnected: Red

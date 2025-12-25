@@ -6,6 +6,7 @@ use std::time::{Duration, Instant};
 pub struct Battery {
     pub percentage: String,
     pub is_charging: bool,
+    cached_span_content: String,
     battery_manager: battery::Manager,
     battery: battery::Battery,
     last_update: Instant,
@@ -31,10 +32,14 @@ impl Battery {
         };
 
         let is_charging = matches!(battery.state(), battery::State::Charging);
+        let percentage = ((battery.state_of_charge().value * 100.0) as i32).to_string();
+        let icon = if is_charging { "󰂄" } else { "󰁹" };
+        let cached_span_content = format!("{} {}%", icon, percentage);
 
         Ok(Self {
-            percentage: ((battery.state_of_charge().value * 100.0) as i32).to_string(),
+            percentage,
             is_charging,
+            cached_span_content,
             battery_manager: manager,
             battery,
             last_update: Instant::now(),
@@ -49,18 +54,17 @@ impl Battery {
             self.percentage = ((self.battery.state_of_charge().value * 100.0) as i32).to_string();
             self.is_charging = matches!(self.battery.state(), battery::State::Charging);
 
+            // Update cached span content
+            let icon = if self.is_charging { "󰂄" } else { "󰁹" };
+            self.cached_span_content = format!("{} {}%", icon, self.percentage);
+
             self.last_update = now;
         }
         Ok(())
     }
 
-    pub fn render(&self) -> String {
-        let icon = if self.is_charging { "󰂄" } else { "󰁹" };
-        format!("{} {}%", icon, self.percentage)
-    }
-
     pub fn render_as_spans(&self, colorize: bool) -> Vec<Span<'_>> {
-        let span = Span::raw(self.render());
+        let span = Span::raw(&self.cached_span_content);
         if colorize {
             let color = if self.is_charging {
                 Color::Green
