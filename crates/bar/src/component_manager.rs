@@ -152,8 +152,8 @@ impl Component {
 
     pub fn render_as_spans_with_colorize(&self, colorize: bool) -> Vec<Span<'_>> {
         match self {
-            Component::Workspaces(component) => component.render(),
-            Component::Windows(component) => component.render(),
+            Component::Workspaces(component) => component.render_as_spans(colorize),
+            Component::Windows(component) => component.render_as_spans(colorize),
             Component::Time(component) => component.render_as_spans(colorize),
             Component::Weather(component) => component.render_as_spans(colorize),
             Component::Temperature(component) => component.render_as_spans(colorize),
