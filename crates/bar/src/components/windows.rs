@@ -51,16 +51,26 @@ impl Windows {
         self.active_window = active_window;
     }
 
-    pub fn render(&self) -> Vec<Span<'_>> {
+    pub fn render_as_spans(&self, colorize: bool) -> Vec<Span<'_>> {
         self.windows
             .iter()
             .map(|w| {
                 if w.address == self.active_window {
-                    // Focused window: brand color background with appropriate text color
-                    let (bg_color, fg_color) = get_brand_color(&w.class, &w.title);
-                    Span::raw(format!(" {} ", w.icon)).bg(bg_color).fg(fg_color)
-                } else {
+                    if colorize {
+                        // Focused window: brand color background with appropriate text color
+                        let (bg_color, fg_color) = get_brand_color(&w.class, &w.title);
+                        Span::raw(format!(" {} ", w.icon)).bg(bg_color).fg(fg_color)
+                    } else {
+                        // Non-colorized mode: black text on white background for active window
+                        Span::raw(format!(" {} ", w.icon))
+                            .bg(Color::White)
+                            .fg(Color::Black)
+                    }
+                } else if colorize {
                     // Unfocused window: white text on default background
+                    Span::raw(format!(" {} ", w.icon)).fg(Color::White)
+                } else {
+                    // Non-colorized mode: white text for non-active windows
                     Span::raw(format!(" {} ", w.icon)).fg(Color::White)
                 }
             })
