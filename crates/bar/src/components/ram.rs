@@ -1,3 +1,4 @@
+use super::sparkline::Sparkline;
 use ratatui::{prelude::Stylize, style::Color, text::Span};
 use std::time::{Duration, Instant};
 use sysinfo::{MemoryRefreshKind, RefreshKind};
@@ -9,23 +10,34 @@ pub struct Ram {
     system: sysinfo::System,
     last_update: Instant,
     update_interval: Duration,
+    sparkline: Sparkline,
 }
 
 impl Ram {
-    pub fn new() -> Self {
+    pub fn with_config(
+        sparkline: bool,
+        sparkline_length: usize,
+        sparkline_update_freq: u64,
+    ) -> Self {
         let system = sysinfo::System::new_with_specifics(
             RefreshKind::nothing().with_memory(MemoryRefreshKind::everything()),
         );
 
         let usage = "0".to_string();
-        let cached_span_content = format!("󰍛 {}%", usage);
+        let sparkline = Sparkline::new(sparkline, sparkline_length);
+        let cached_span_content = if sparkline.enabled {
+            format!("󰍛 {}", sparkline.render_with_spaces())
+        } else {
+            format!("󰍛 {}%", usage)
+        };
 
         Self {
             usage,
             cached_span_content,
             system,
             last_update: Instant::now(),
-            update_interval: Duration::from_secs(2),
+            update_interval: Duration::from_secs(sparkline_update_freq),
+            sparkline,
         }
     }
 
@@ -38,7 +50,16 @@ impl Ram {
                 / self.system.total_memory() as f64
                 * 100.0) as u32;
             self.usage = mem_percent.to_string();
-            self.cached_span_content = format!("󰍛 {}%", self.usage);
+
+            if self.sparkline.enabled {
+                // Update sparkline data
+                self.sparkline.update(mem_percent as u64);
+
+                // Render sparkline
+                self.cached_span_content = format!("󰍛 {}", self.sparkline.render());
+            } else {
+                self.cached_span_content = format!("󰍛 {}%", self.usage);
+            }
 
             self.last_update = now;
         }

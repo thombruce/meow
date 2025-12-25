@@ -1,3 +1,4 @@
+use super::sparkline::Sparkline;
 use ratatui::{prelude::Stylize, style::Color, text::Span};
 use std::time::{Duration, Instant};
 use sysinfo::{CpuRefreshKind, RefreshKind, System};
@@ -9,23 +10,34 @@ pub struct Cpu {
     system: System,
     last_update: Instant,
     update_interval: Duration,
+    sparkline: Sparkline,
 }
 
 impl Cpu {
-    pub fn new() -> Self {
+    pub fn with_config(
+        sparkline: bool,
+        sparkline_length: usize,
+        sparkline_update_freq: u64,
+    ) -> Self {
         let system = System::new_with_specifics(
             RefreshKind::nothing().with_cpu(CpuRefreshKind::everything()),
         );
 
         let usage = "0".to_string();
-        let cached_span_content = format!("󰻠 {}%", usage);
+        let sparkline = Sparkline::new(sparkline, sparkline_length);
+        let cached_span_content = if sparkline.enabled {
+            format!("󰻠 {}", sparkline.render_with_spaces())
+        } else {
+            format!("󰻠 {}%", usage)
+        };
 
         Self {
             usage,
             cached_span_content,
             system,
             last_update: Instant::now(),
-            update_interval: Duration::from_secs(3),
+            update_interval: Duration::from_secs(sparkline_update_freq),
+            sparkline,
         }
     }
 
@@ -39,7 +51,16 @@ impl Cpu {
             let sum = iter.fold(0.0, |acc, x| acc + x.cpu_usage());
             let avg: u32 = (sum / count) as u32;
             self.usage = avg.to_string();
-            self.cached_span_content = format!("󰻠 {}%", self.usage);
+
+            if self.sparkline.enabled {
+                // Update sparkline data
+                self.sparkline.update(avg as u64);
+
+                // Render sparkline
+                self.cached_span_content = format!("󰻠 {}", self.sparkline.render());
+            } else {
+                self.cached_span_content = format!("󰻠 {}%", self.usage);
+            }
 
             self.last_update = now;
         }

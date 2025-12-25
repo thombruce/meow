@@ -10,17 +10,22 @@ This configuration file allows you to customize which components appear in each 
 - `time` - Current date and time
 - `weather` - Weather information
 - `temperature` - CPU temperature
-- `cpu` - CPU usage
-- `ram` - Memory usage
-- `wifi` - WiFi connection status
+- `cpu` - CPU usage (supports sparkline mode)
+- `ram` - Memory usage (supports sparkline mode)
+- `wifi` - WiFi connection status (supports sparkline mode)
 - `brightness` - Screen brightness
 - `volume` - Volume level
 - `battery` - Battery status
 - `separator` - Visual separator (" | ") for creating custom sections
 - `space` - Single space character (" ") for fine-tuned spacing
 
+**Sparkline Support**: The `cpu`, `ram`, and `wifi` components support sparkline mode to visualize usage patterns over time. See the configuration examples below for details.
+
 ## Configuration Structure
 
+The configuration supports both simple string components and object-based components with additional options.
+
+### Basic Structure
 ```json
 {
   "bars": {
@@ -41,6 +46,42 @@ This configuration file allows you to customize which components appear in each 
   }
 }
 ```
+
+### Component Objects
+Components can also be configured as objects with additional options:
+
+```json
+{
+  "bars": {
+    "left": ["workspaces"],
+    "middle": ["time", "separator", "weather"],
+    "right": [
+      "temperature",
+      "separator", 
+      {
+        "name": "wifi",
+        "sparkline": true,
+        "sparkline_length": 8,
+        "sparkline_update_freq": 1
+      },
+      "separator",
+      "battery"
+    ]
+  }
+}
+```
+
+#### Sparkline Component Options
+The following components support sparkline mode: **cpu**, **ram**, **wifi**
+
+For any sparkline-enabled component:
+- **`name`** (required): Component name ("cpu", "ram", or "wifi")
+- **`sparkline`** (optional, default: false): Enable sparkline mode to show usage over time
+- **`sparkline_length`** (optional, default: 10): Length of the sparkline in characters
+- **`sparkline_update_freq`** (optional, default: varies by component): Update frequency in seconds
+  - CPU: 3 seconds default
+  - RAM: 2 seconds default  
+  - WiFi: 2 seconds default
 
 ## Customization Examples
 
@@ -73,6 +114,128 @@ This configuration file allows you to customize which components appear in each 
     "left": ["workspaces"],
     "middle": ["time", "separator", "weather"],
     "right": ["wifi", "separator", "separator", "battery"]
+  }
+}
+```
+
+### WiFi with Sparkline
+```json
+{
+  "bars": {
+    "left": ["workspaces"],
+    "middle": ["time", "separator", "weather"],
+    "right": [
+      "separator",
+      {
+        "name": "wifi",
+        "sparkline": true,
+        "sparkline_length": 12,
+        "sparkline_update_freq": 1
+      },
+      "separator",
+      "battery"
+    ]
+  }
+}
+```
+
+### Compact WiFi Sparkline
+```json
+{
+  "bars": {
+    "left": ["workspaces"],
+    "middle": ["time"],
+    "right": [
+      {
+        "name": "wifi",
+        "sparkline": true,
+        "sparkline_length": 6
+      },
+      "separator",
+      "battery"
+    ]
+  }
+}
+```
+
+### Full System Monitoring with Sparklines
+```json
+{
+  "bars": {
+    "left": ["workspaces"],
+    "middle": ["time", "separator", "weather"],
+    "right": [
+      {
+        "name": "cpu",
+        "sparkline": true,
+        "sparkline_length": 8,
+        "sparkline_update_freq": 2
+      },
+      "space",
+      {
+        "name": "ram", 
+        "sparkline": true,
+        "sparkline_length": 8
+      },
+      "separator",
+      {
+        "name": "wifi",
+        "sparkline": true,
+        "sparkline_length": 10
+      },
+      "separator",
+      "battery"
+    ]
+  }
+}
+```
+
+### Mixed Traditional and Sparkline Display
+```json
+{
+  "bars": {
+    "left": ["workspaces"],
+    "middle": ["time"],
+    "right": [
+      {
+        "name": "cpu",
+        "sparkline": true,
+        "sparkline_length": 12
+      },
+      "separator",
+      "ram",
+      "separator",
+      "wifi"
+    ]
+  }
+}
+```
+
+### Compact System Monitoring
+```json
+{
+  "bars": {
+    "left": ["workspaces"],
+    "middle": ["time"],
+    "right": [
+      {
+        "name": "cpu",
+        "sparkline": true,
+        "sparkline_length": 4
+      },
+      "space",
+      {
+        "name": "ram",
+        "sparkline": true,
+        "sparkline_length": 4
+      },
+      "space",
+      {
+        "name": "wifi",
+        "sparkline": true,
+        "sparkline_length": 4
+      }
+    ]
   }
 }
 ```
