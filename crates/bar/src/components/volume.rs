@@ -10,6 +10,12 @@ pub struct Volume {
     cached_span_content: String,
 }
 
+impl Default for Volume {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Volume {
     pub fn new() -> Self {
         let (level, is_muted) = get_system_volume().unwrap_or((0, false));

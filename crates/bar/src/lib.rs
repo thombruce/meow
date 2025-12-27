@@ -7,20 +7,149 @@ use ratatui::{
 use std::fs;
 use std::io::Write;
 use std::path::PathBuf;
+use std::process::Command;
 use std::time::Duration;
 use tokio::runtime::Runtime;
 use tokio::sync::mpsc;
 
-mod component_manager;
-mod components;
-mod config;
-mod logging;
-mod lua_component;
+pub mod component_manager;
+pub mod components;
+pub mod config;
+pub mod logging;
+pub mod lua_component;
 
-use component_manager::ComponentManager;
-use components::{LeftBar, MiddleBar, RightBar};
+pub use component_manager::ComponentManager;
+pub use components::{LeftBar, MiddleBar, RightBar};
 
-pub fn run() -> color_eyre::Result<()> {
+/// Check if bar is already running by checking PID file
+pub fn is_bar_running() -> color_eyre::Result<bool> {
+    let pid_file_path = get_pid_file_path()?;
+
+    if !pid_file_path.exists() {
+        return Ok(false);
+    }
+
+    let pid_content = fs::read_to_string(&pid_file_path)?;
+    let pid: u32 = pid_content
+        .trim()
+        .parse()
+        .map_err(|_| color_eyre::eyre::eyre!("Invalid PID in PID file"))?;
+
+    // Check if process exists by sending signal 0
+    unsafe {
+        if libc::kill(pid as i32, 0) == 0 {
+            Ok(true) // Process exists and is alive
+        } else {
+            // Process doesn't exist, remove stale PID file
+            let _ = fs::remove_file(&pid_file_path);
+            Ok(false)
+        }
+    }
+}
+
+/// Find the catfood-bar executable using multiple strategies
+fn find_bar_executable() -> color_eyre::Result<std::path::PathBuf> {
+    // Strategy 1: Try PATH first (works for installed packages)
+    if let Ok(bar_exe) = which::which("catfood-bar") {
+        return Ok(bar_exe);
+    }
+
+    // Strategy 2: Try CARGO_BIN_EXE (works during development with cargo run)
+    if let Ok(path) = std::env::var("CARGO_BIN_EXE_catfood-bar") {
+        let path = std::path::PathBuf::from(path);
+        if path.exists() {
+            return Ok(path);
+        }
+    }
+
+    // Strategy 3: Try relative to current executable (development fallback)
+    let current_exe = std::env::current_exe()?;
+    let bar_exe = current_exe
+        .parent()
+        .unwrap_or(&current_exe)
+        .join("catfood-bar");
+
+    if bar_exe.exists() {
+        return Ok(bar_exe);
+    }
+
+    // Strategy 4: Try target directories (development fallback)
+    let current_dir = std::env::current_dir()?;
+    let target_debug = current_dir.join("target/debug/catfood-bar");
+    if target_debug.exists() {
+        return Ok(target_debug);
+    }
+
+    let target_release = current_dir.join("target/release/catfood-bar");
+    if target_release.exists() {
+        return Ok(target_release);
+    }
+
+    Err(color_eyre::eyre::eyre!(
+        "Could not find catfood-bar executable.\n\n\
+         Please install catfood-bar with one of these methods:\n\
+         • cargo install catfood-bar\n\
+         • Download from https://github.com/thombruce/catfood/releases\n\n\
+         Or ensure it's available in your PATH if already installed."
+    ))
+}
+
+/// Spawn bar executable in a kitten panel
+pub fn spawn_in_panel() {
+    // Find the bar executable using robust discovery
+    let bar_exe = match find_bar_executable() {
+        Ok(path) => path,
+        Err(e) => {
+            eprintln!("Error: {}", e);
+            std::process::exit(1);
+        }
+    };
+
+    // Spawn kitten panel directly with proper arguments for security
+    // This avoids shell injection risks from special characters in paths
+    match Command::new("kitten")
+        .arg("panel")
+        .arg(&bar_exe)
+        .arg("--no-kitten") // Required to prevent spawning additional panels
+        .spawn()
+    {
+        Ok(_child) => {
+            // Give panel a moment to start then exit parent
+            // The child process continues running independently
+            std::thread::sleep(std::time::Duration::from_millis(500));
+            std::process::exit(0);
+        }
+        Err(e) => {
+            eprintln!("Failed to spawn kitten panel: {}", e);
+            eprintln!(
+                "Make sure Kitty is installed and you're running this in a Kitty environment."
+            );
+            std::process::exit(1);
+        }
+    }
+}
+
+/// Handle common bar CLI logic: check if running and optionally spawn in panel
+/// Returns true if spawning in panel (process will exit via spawn_in_panel),
+/// false if should continue with direct execution
+pub fn handle_bar_cli(no_kitten: bool) -> bool {
+    if !no_kitten {
+        // Check if already running
+        if let Ok(true) = is_bar_running() {
+            eprintln!("catfood-bar is already running");
+            std::process::exit(1);
+        }
+
+        // Spawn in panel - this function will exit the process
+        spawn_in_panel();
+        // This line is unreachable, but required for type compatibility
+        unreachable!("spawn_in_panel() should have exited the process")
+    } else {
+        false // Continue with direct execution (--no-kitten case)
+    }
+}
+
+pub fn run_bar() -> color_eyre::Result<()> {
     color_eyre::install()?;
 
     // Create PID file at bar startup (not in parent)

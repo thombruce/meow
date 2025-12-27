@@ -12,6 +12,12 @@ pub struct Brightness {
     cached_span_content: String,
 }
 
+impl Default for Brightness {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Brightness {
     pub fn new() -> Self {
         let level = get_system_brightness().unwrap_or_default();
