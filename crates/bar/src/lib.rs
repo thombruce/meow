@@ -124,6 +124,24 @@ pub fn spawn_in_panel() {
     }
 }
 
+/// Handle common bar CLI logic: check if running and optionally spawn in panel
+/// Returns true if process should exit (spawned in panel), false if should continue running
+pub fn handle_bar_cli(no_kitten: bool) -> bool {
+    if !no_kitten {
+        // Check if already running
+        if let Ok(true) = is_bar_running() {
+            eprintln!("catfood-bar is already running");
+            std::process::exit(1);
+        }
+
+        // Spawn in panel and exit parent
+        spawn_in_panel();
+        true // This indicates the process should exit (but spawn_in_panel already exits)
+    } else {
+        false // Continue with normal execution
+    }
+}
+
 pub fn run_bar() -> color_eyre::Result<()> {
     color_eyre::install()?;
 

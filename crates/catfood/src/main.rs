@@ -1,4 +1,4 @@
-use catfood_bar::{is_bar_running, run_bar, spawn_in_panel};
+use catfood_bar::{handle_bar_cli, run_bar};
 use clap::{Parser, Subcommand};
 
 #[derive(Parser)]
@@ -34,19 +34,13 @@ fn main() -> color_eyre::Result<()> {
 
     match cli.command {
         Commands::Bar { no_kitten } => {
-            if no_kitten {
-                // Run directly with existing behavior
-                run_bar()?;
-            } else {
-                // Check if bar is already running
-                if is_bar_running()? {
-                    eprintln!("catfood bar is already running");
-                    std::process::exit(1);
-                }
-
-                // Spawn in kitten panel and disown
-                spawn_in_panel();
+            // Handle common CLI logic
+            if handle_bar_cli(no_kitten) {
+                return Ok(()); // Process spawned in panel and exited
             }
+
+            // Run directly with existing behavior (--no-kitten case)
+            run_bar()?;
         }
         Commands::Menu { categories: _ } => {
             println!("Menu feature coming soon!");

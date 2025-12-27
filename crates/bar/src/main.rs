@@ -1,4 +1,4 @@
-use catfood_bar::{is_bar_running, run_bar, spawn_in_panel};
+use catfood_bar::{handle_bar_cli, run_bar};
 use clap::Parser;
 
 #[derive(Parser)]
@@ -13,16 +13,11 @@ struct Cli {
 fn main() -> color_eyre::Result<()> {
     let cli = Cli::parse();
 
-    // If not --no-kitten, check if already running and spawn in panel
-    if !cli.no_kitten {
-        if is_bar_running()? {
-            eprintln!("catfood-bar is already running");
-            std::process::exit(1);
-        }
-        spawn_in_panel();
-        Ok(()) // This line will never be reached, but needed for type compatibility
-    } else {
-        // --no-kitten: run directly with existing behavior
-        run_bar()
+    // Handle common CLI logic
+    if handle_bar_cli(cli.no_kitten) {
+        return Ok(()); // Process spawned in panel and exited
     }
+
+    // Run directly with existing behavior (--no-kitten case)
+    run_bar()
 }
