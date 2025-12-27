@@ -120,6 +120,12 @@ pub struct LuaComponentRegistry {
     components: HashMap<String, LuaComponent>,
 }
 
+impl Default for LuaComponentRegistry {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl LuaComponentRegistry {
     pub fn new() -> Self {
         Self {

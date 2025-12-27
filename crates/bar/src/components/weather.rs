@@ -34,6 +34,12 @@ struct WeatherCondition {
     main: String,
 }
 
+impl Default for Weather {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Weather {
     pub fn new() -> Self {
         let data = Arc::new(Mutex::new(WeatherData {

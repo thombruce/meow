@@ -11,6 +11,12 @@ pub struct Temperature {
     update_interval: Duration,
 }
 
+impl Default for Temperature {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Temperature {
     pub fn new() -> Self {
         let components = Components::new();
