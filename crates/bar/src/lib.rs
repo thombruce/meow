@@ -130,7 +130,8 @@ pub fn spawn_in_panel() {
 }
 
 /// Handle common bar CLI logic: check if running and optionally spawn in panel
-/// Returns true if process should exit (spawned in panel), false if should continue running
+/// Returns true if spawning in panel (process will exit via spawn_in_panel),
+/// false if should continue with direct execution
 pub fn handle_bar_cli(no_kitten: bool) -> bool {
     if !no_kitten {
         // Check if already running
@@ -139,11 +140,12 @@ pub fn handle_bar_cli(no_kitten: bool) -> bool {
             std::process::exit(1);
         }
 
-        // Spawn in panel and exit parent
+        // Spawn in panel - this function will exit the process
         spawn_in_panel();
-        true // This indicates the process should exit (but spawn_in_panel already exits)
+        // This line is unreachable, but required for type compatibility
+        unreachable!("spawn_in_panel() should have exited the process")
     } else {
-        false // Continue with normal execution
+        false // Continue with direct execution (--no-kitten case)
     }
 }
 

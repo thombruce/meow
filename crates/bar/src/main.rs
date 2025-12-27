@@ -15,7 +15,9 @@ fn main() -> color_eyre::Result<()> {
 
     // Handle common CLI logic
     if handle_bar_cli(cli.no_kitten) {
-        return Ok(()); // Process spawned in panel and exited
+        // This return is unreachable - handle_bar_cli spawns panel and exits process
+        // Required for type compatibility since handle_bar_cli returns bool
+        return Ok(());
     }
 
     // Run directly with existing behavior (--no-kitten case)
